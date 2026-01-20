@@ -1,7 +1,62 @@
 create table suppliers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    supplier_code VARCHAR(255) NOT NULL UNIQUE,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    balance INT NOT NULL DEFAULT 0,
     status INT NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+create table supplier_products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    supplier_id INT NOT NULL,
+    supplier_name VARCHAR(255) NOT NULL,
+    supplier_code VARCHAR(255) NOT NULL,
+    face_price INT NOT NULL DEFAULT 0,
+    price INT NOT NULL DEFAULT 0,
+    `status` INT NOT NULL DEFAULT 1,
+    spec_id INT NOT NULL,
+    sku_id INT NOT NULL,
+    brand_id INT NOT NULL;
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE supplier_products
+ADD COLUMN spec_id INT NOT NULL,
+ADD COLUMN sku_id INT NOT NULL,
+ADD COLUMN brand_id INT NOT NULL;
+
+create table skus (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+create table brands (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+create table specs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+create table channels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    app_id CHAR(36) NOT NULL UNIQUE,
+    secret_key CHAR(32) NOT NULL,
+    white_list VARCHAR(255) NOT NULL,
+    `status` INT NOT NULL DEFAULT 1,
+    balance INT NOT NULL DEFAULT 0,
+    credit_limit INT NOT NULL DEFAULT 0 COMMENT 'credit limit 授信',
+    credit_balance INT NOT NULL DEFAULT 0 COMMENT 'credit balance 授信余额',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
