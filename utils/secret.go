@@ -6,7 +6,7 @@ import (
 )
 
 func GenerateSecret() (string, error) {
-	b := make([]byte, 32)
+	b := make([]byte, 16) // 16 bytes
 	_, err := rand.Read(b)
 	if err != nil {
 		return "", err

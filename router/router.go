@@ -25,5 +25,36 @@ func InitRouter() *gin.Engine {
 	// 品牌、规格、SKU API端点
 	r.POST("/project", controller.CreateModel)
 	r.GET("/project", controller.GetModelList)
+
+	// 渠道API端点
+	channel := r.Group("/channel")
+	{
+		// 创建渠道
+		channel.POST("", controller.CreateChannel)
+		// 渠道列表
+		channel.GET("", controller.GetChannelList)
+		// 更新渠道
+		channel.PUT("", controller.UpdateChannel)
+		project := channel.Group("/:channelID/project")
+		{
+			// 项目列表
+			project.GET("", controller.GetProjectListByChannelID)
+			// 创建项目
+			project.POST("", controller.CreateProject)
+			// 更新项目状态
+			project.PUT("/:projectID", controller.UpdateProjectStatus)
+
+			product := project.Group("/:projectID/product")
+			{
+				// // 产品列表
+				product.GET("", controller.GetProductListByProjectID)
+				// // 创建产品
+				product.POST("", controller.CreateProjectProduct)
+				// // 更新产品状态
+				// product.PUT("/:productID", controller.UpdateProductStatus)
+			}
+		}
+
+	}
 	return r
 }

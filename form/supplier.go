@@ -5,6 +5,11 @@ type Supplier struct {
 	Name string `json:"name"`
 }
 
+type CreateModelForm struct {
+	Type string `json:"type" binding:"required,oneof=brands specs skus"`
+	Name string `json:"name" binding:"required"`
+}
+
 type SupplierUpdateForm struct {
 	ID     int    `json:"id" binding:"required"`
 	Status *int   `json:"status" binding:"required"`

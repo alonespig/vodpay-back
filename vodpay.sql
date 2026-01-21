@@ -60,3 +60,28 @@ create table channels (
     credit_balance INT NOT NULL DEFAULT 0 COMMENT 'credit balance 授信余额',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+create table projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    channel_id INT NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `status` INT NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+create table project_products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `status` INT NOT NULL DEFAULT 1,
+    project_id INT NOT NULL,
+    brand_id INT NOT NULL,
+    spec_id INT NOT NULL,
+    sku_id INT NOT NULL,
+    face_price INT NOT NULL DEFAULT 0,
+    price INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `version` INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
