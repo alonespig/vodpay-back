@@ -16,15 +16,28 @@ func CreateSupplier(supplier *model.Supplier) error {
 }
 
 func RechargeSupplier(req *form.RechargeSupplierForm) error {
-	supplier, err := model.GetSupplierByID(req.SupplierID)
+	supplier, err := model.GetSupplierByID(req.ID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
 	}
-	if supplier.Name != req.SupplierName {
+	if supplier.Name != req.Name {
 		return fmt.Errorf("supplier name not match")
 	}
-	return model.RechargeSupplier(req.SupplierID, req.Amount)
+	recharge := &model.SupplierRecharge{
+		SupplierID:    supplier.ID,
+		SupplierName:  supplier.Name,
+		SupplierCode:  supplier.Code,
+		Amount:        req.Amount,
+		ImageURL:      req.ImageURL,
+		Status:        1, // 1 是审核中
+		ApplyUserID:   1, // 1 是管理员
+		ApplyUserName: "admin",
+		AuditUserID:   0,
+		AuditUserName: "",
+		Remark:        nil,
+	}
+	return model.CreateSupplierRecharge(recharge)
 }
 
 func UpdateSupplier(supplier *model.Supplier) error {
@@ -112,8 +125,15 @@ func CreateSupplierProduct(form *form.SupplierProduct) error {
 	return nil
 }
 
-func SupplierProductList() ([]model.SupplierProduct, error) {
-	return model.SupplierProductList()
+func GetSupplierRechargeHistoryList() ([]model.SupplierRecharge, error) {
+	return model.GetSupplierRechargeHistoryList()
+}
+
+func SupplierProductList(req *form.SupplierProductReq) ([]model.SupplierProduct, error) {
+	if req.SupplierID == 0 {
+		return model.SupplierProductList()
+	}
+	return model.SupplierProductListBySupplierID(req.SupplierID)
 }
 
 func CreateModel(modelName string, name string) error {

@@ -16,6 +16,13 @@ type SupplierUpdateForm struct {
 	Name   string `json:"name" binding:"required"`
 }
 
+type SupplierProductReq struct {
+	Page       int  `form:"page"`
+	Size       int  `form:"size"`
+	SupplierID int  `form:"supplierID"`
+	Status     *int `form:"status"`
+}
+
 type SupplierProduct struct {
 	SupplierID int     `json:"supplierID" binding:"required"`
 	Code       string  `json:"code" binding:"required"`
@@ -35,7 +42,16 @@ type UpdateSupplierProductForm struct {
 }
 
 type RechargeSupplierForm struct {
-	SupplierID   int    `json:"supplierID" binding:"required"`
-	Amount       int    `json:"amount" binding:"required,gt=0"`
-	SupplierName string `json:"supplierName" binding:"required"`
+	ID       int    `json:"id" binding:"required"`
+	Amount   int    `json:"amount" binding:"required,gt=0"`
+	Name     string `json:"name" binding:"required"`
+	ImageURL string `json:"imageURL" binding:"required"`
+}
+
+type SupplierRecharge struct {
+	ID         int    `json:"id" binding:"required"`
+	SupplierID int    `json:"supplierID" binding:"required"`
+	Amount     int    `json:"amount" binding:"required,gt=0"`
+	Status     *int   `json:"status" binding:"required,oneof=0 2"`
+	Remark     string `json:"remark"`
 }

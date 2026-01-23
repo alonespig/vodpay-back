@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 	"vodpay/form"
 	"vodpay/model"
@@ -117,4 +118,65 @@ func GetProductListByProjectID(c *gin.Context) {
 		return
 	}
 	Success(c, products)
+}
+
+func UpdateProjectProduct(c *gin.Context) {
+	var req form.UpdateProjectProductForm
+	if err := c.ShouldBindJSON(&req); err != nil {
+		BadRequest(c, err.Error())
+		return
+	}
+	// 从URL参数中获取 channelID
+	channelIDStr := c.Param("channelID")
+	channelID, err := strconv.Atoi(channelIDStr)
+	if err != nil || channelID <= 0 {
+		BadRequest(c, err.Error())
+		return
+	}
+	// 从URL参数中获取projectID
+	projectIDStr := c.Param("projectID")
+	projectID, err := strconv.Atoi(projectIDStr)
+	if err != nil || projectID <= 0 {
+		BadRequest(c, err.Error())
+		return
+	}
+	// 从URL参数中获取productID
+	productIDStr := c.Param("productID")
+	productID, err := strconv.Atoi(productIDStr)
+	if err != nil || productID <= 0 {
+		BadRequest(c, err.Error())
+		return
+	}
+	if req.ID != productID {
+		BadRequest(c, "productID not match")
+		return
+	}
+	if err := service.UpdateProjectProduct(channelID, projectID, &req); err != nil {
+		Fail(c, 500, err.Error())
+		return
+	}
+	Success(c, nil)
+}
+
+func Upload(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(400, gin.H{"msg": "获取文件失败"})
+		return
+	}
+
+	savePath := "./uploads/" + file.Filename
+	err = c.SaveUploadedFile(file, savePath)
+	if err != nil {
+		c.JSON(500, gin.H{"msg": "保存失败"})
+		return
+	}
+
+	// 返回文件访问URL
+	fileURL := "/uploads/" + file.Filename
+	Success(c, gin.H{
+		"msg":      "上传成功",
+		"url":      fmt.Sprintf("http://%s%s", c.Request.Host, fileURL),
+		"filename": file.Filename,
+	})
 }

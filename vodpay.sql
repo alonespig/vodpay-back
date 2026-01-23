@@ -7,6 +7,22 @@ create table suppliers (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+create table supplier_recharges (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_id INT NOT NULL,
+    supplier_name VARCHAR(255) NOT NULL,
+    supplier_code VARCHAR(255) NOT NULL,
+    amount INT NOT NULL DEFAULT 0,
+    `status` INT NOT NULL DEFAULT 1,
+    apply_user_id INT NOT NULL COMMENT '申请用户ID',
+    apply_user_name VARCHAR(255) NOT NULL COMMENT '申请用户',
+    audit_user_id INT NOT NULL COMMENT '审核用户ID',
+    audit_user_name VARCHAR(255) NOT NULL COMMENT '审核用户',
+     image_url  varchar(255) NOT NULL COMMENT '审核图片',
+    remark VARCHAR(255) COMMENT '审核备注',
+    pass_at DATETIME COMMENT '通过时间',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 create table supplier_products (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -23,11 +39,6 @@ create table supplier_products (
     brand_id INT NOT NULL;
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-ALTER TABLE supplier_products
-ADD COLUMN spec_id INT NOT NULL,
-ADD COLUMN sku_id INT NOT NULL,
-ADD COLUMN brand_id INT NOT NULL;
 
 create table skus (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -85,3 +96,10 @@ create table project_products (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `version` INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE channel_supplier_products (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  channel_product_id INT NOT NULL,
+  supplier_product_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

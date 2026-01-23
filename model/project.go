@@ -92,3 +92,24 @@ func ProjectProductName(projectID, skuID, brandID, specID int) (int64, error) {
 	}
 	return total, nil
 }
+
+func GetProjectProductByID(projectProductID int) (*ProjectProduct, error) {
+	product := &ProjectProduct{}
+	sqlStr := `SELECT id, name, status, project_id, brand_id, spec_id, sku_id, face_price, price, created_at, version
+	 FROM project_products WHERE id = ?`
+	err := db.Get(product, sqlStr, projectProductID)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
+}
+
+func UpdateProjectProduct(product *ProjectProduct) error {
+	sqlStr := `UPDATE project_products SET status = :status, face_price = :face_price, price = :price, version = version + 1
+	 WHERE id = :id AND version = :version`
+	_, err := db.NamedExec(sqlStr, product)
+	if err != nil {
+		return err
+	}
+	return nil
+}

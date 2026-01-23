@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"vodpay/form"
 	"vodpay/model"
 )
 
@@ -78,4 +79,48 @@ func CreateProjectProduct(product *model.ProjectProduct) error {
 
 func GetProjectProductListByProjectID(id int) ([]model.ProjectProduct, error) {
 	return model.GetProjectProductListByProjectID(id)
+}
+
+func UpdateProjectProduct(channelID, projectID int, form *form.UpdateProjectProductForm) error {
+	// 检查项目是否存在
+	project, err := model.GetProjectByID(projectID)
+	if err != nil {
+		return err
+	}
+	if project.ChannelID != channelID {
+		return fmt.Errorf("project %d not belong to channel %d", projectID, channelID)
+	}
+	projectProduct, err := model.GetProjectProductByID(form.ID)
+	if err != nil {
+		log.Printf("get project product by id failed, err: %v", err)
+		return err
+	}
+	if projectProduct.ProjectID != projectID {
+		return fmt.Errorf("project product %d not belong to project %d", form.ID, projectID)
+	}
+	projectProduct.Status = *form.Status
+	projectProduct.FacePrice = int(form.FacePrice * 100)
+	projectProduct.Price = int(form.Price * 100)
+	return model.UpdateProjectProduct(projectProduct)
+}
+
+func GetSupplierRechargeList(status int) ([]model.SupplierRecharge, error) {
+	return model.GetSupplierRechargeList(status)
+}
+
+func UpdateSupplierRecharge(form *form.SupplierRecharge) error {
+	recharge, err := model.GetSupplierRechargeByID(form.ID)
+	if err != nil {
+		log.Printf("get supplier recharge by id failed, err: %v", err)
+		return err
+	}
+	if recharge.SupplierID != form.SupplierID {
+		return fmt.Errorf("supplier recharge %d not belong to supplier %d", form.ID, form.SupplierID)
+	}
+	if recharge.Amount != form.Amount {
+		return fmt.Errorf("supplier recharge %d amount not match, expect %d, got %d", form.ID, recharge.Amount, form.Amount)
+	}
+	recharge.Status = *form.Status
+	recharge.Remark = &form.Remark
+	return model.UpdateSupplierRecharge(recharge)
 }

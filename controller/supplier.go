@@ -96,7 +96,12 @@ func RechargeSupplier(c *gin.Context) {
 }
 
 func SupplierProductList(c *gin.Context) {
-	products, err := service.SupplierProductList()
+	var req form.SupplierProductReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		ServerError(c, err.Error())
+		return
+	}
+	products, err := service.SupplierProductList(&req)
 	if err != nil {
 		ServerError(c, err.Error())
 		return
@@ -129,4 +134,35 @@ func GetModelList(c *gin.Context) {
 	} else {
 		BadRequest(c, "invalid model type")
 	}
+}
+
+func GetSupplierRechargeHistoryList(c *gin.Context) {
+	recharges, err := service.GetSupplierRechargeHistoryList()
+	if err != nil {
+		ServerError(c, err.Error())
+		return
+	}
+	Success(c, recharges)
+}
+
+func GetSupplierRechargeList(c *gin.Context) {
+	recharges, err := service.GetSupplierRechargeList(1)
+	if err != nil {
+		ServerError(c, err.Error())
+		return
+	}
+	Success(c, recharges)
+}
+
+func UpdateSupplierRecharge(c *gin.Context) {
+	var req form.SupplierRecharge
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ServerError(c, err.Error())
+		return
+	}
+	if err := service.UpdateSupplierRecharge(&req); err != nil {
+		ServerError(c, err.Error())
+		return
+	}
+	Success(c, nil)
 }

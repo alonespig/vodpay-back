@@ -32,6 +32,23 @@ type SupplierProduct struct {
 	CreatedAt    time.Time `db:"created_at" json:"createdAt"`
 }
 
+type SupplierRecharge struct {
+	ID            int        `db:"id" json:"id"`
+	SupplierID    int        `db:"supplier_id" json:"supplierID"`
+	SupplierName  string     `db:"supplier_name" json:"supplierName"`
+	SupplierCode  string     `db:"supplier_code" json:"supplierCode"`
+	Amount        int        `db:"amount" json:"amount"`
+	Status        int        `db:"status" json:"status"`
+	ApplyUserID   int        `db:"apply_user_id" json:"applyUserID"`
+	ApplyUserName string     `db:"apply_user_name" json:"applyUserName"`
+	AuditUserID   int        `db:"audit_user_id" json:"auditUserID"`
+	AuditUserName string     `db:"audit_user_name" json:"auditUserName"`
+	ImageURL      string     `db:"image_url" json:"imageURL"`
+	Remark        *string    `db:"remark" json:"remark"`
+	PassAt        *time.Time `db:"pass_at" json:"passAt"`
+	CreatedAt     time.Time  `db:"created_at" json:"createdAt"`
+}
+
 type BaseModel struct {
 	ID        int       `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
@@ -85,23 +102,110 @@ func UpdateSupplierStatus(supplier *Supplier) error {
 	return nil
 }
 
-func RechargeSupplier(supplierID int, amount int) error {
-	// 检查供应商是否存在
-	supplier, err := GetSupplierByID(supplierID)
+func CreateSupplierRecharge(recharge *SupplierRecharge) error {
+	recharge.Amount = recharge.Amount * 100
+	sqlStr := `INSERT INTO supplier_recharges (supplier_id, supplier_name, supplier_code, amount, status, apply_user_id, 
+								apply_user_name, audit_user_id, audit_user_name, image_url) 
+				VALUES (:supplier_id, :supplier_name, :supplier_code, :amount, :status, 
+				:apply_user_id, :apply_user_name, :audit_user_id, :audit_user_name, :image_url)`
+	_, err := db.NamedExec(sqlStr, recharge)
 	if err != nil {
-		log.Printf("get supplier by id failed, err: %v", err)
-		return err
-	}
-	if supplier == nil {
-		return fmt.Errorf("supplier not found")
-	}
-	sqlStr := "UPDATE suppliers SET balance = balance + ? WHERE id = ?"
-	_, err = db.Exec(sqlStr, amount*100, supplierID)
-	if err != nil {
+		log.Printf("create supplier recharge failed, err: %v", err)
 		return err
 	}
 	return nil
 }
+
+func GetSupplierRechargeList(status int) ([]SupplierRecharge, error) {
+	var recharges []SupplierRecharge
+	sqlStr := fmt.Sprintf("SELECT * FROM supplier_recharges WHERE status = %d", status)
+	err := db.Select(&recharges, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	return recharges, nil
+}
+
+func GetSupplierRechargeHistoryList() ([]SupplierRecharge, error) {
+	var recharges []SupplierRecharge
+	sqlStr := "SELECT * FROM supplier_recharges WHERE status != 1"
+	err := db.Select(&recharges, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	return recharges, nil
+}
+
+func GetSupplierRechargeByID(id int) (*SupplierRecharge, error) {
+	var recharge SupplierRecharge
+	sqlStr := fmt.Sprintf("SELECT * FROM supplier_recharges WHERE id = %d", id)
+	err := db.Get(&recharge, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	return &recharge, nil
+}
+
+func UpdateSupplierRecharge(recharge *SupplierRecharge) error {
+	sqlStr := `UPDATE supplier_recharges SET 
+				status = :status, pass_at = :pass_at, audit_user_id = :audit_user_id, audit_user_name = :audit_user_name, remark = :remark 
+				WHERE id = :id`
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+	_, err = db.NamedExec(sqlStr, recharge)
+	if err != nil {
+		log.Printf("update supplier recharge failed, err: %v", err)
+		return err
+	}
+	if recharge.Status != 2 {
+		// 提交事务
+		err = tx.Commit()
+		if err != nil {
+			log.Printf("commit supplier recharge failed, err: %v", err)
+			return err
+		}
+		return nil
+	}
+	// 更新供应商余额
+	sqlStr = "UPDATE suppliers SET balance = balance + ? WHERE id = ?"
+	_, err = tx.Exec(sqlStr, recharge.Amount*100, recharge.SupplierID)
+	if err != nil {
+		log.Printf("update supplier balance failed, err: %v", err)
+		return err
+	}
+	// 提交事务
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("commit supplier recharge failed, err: %v", err)
+		return err
+	}
+	return nil
+}
+
+// func RechargeSupplier(supplierID int, amount int) error {
+// 	// 检查供应商是否存在
+// 	supplier, err := GetSupplierByID(supplierID)
+// 	if err != nil {
+// 		log.Printf("get supplier by id failed, err: %v", err)
+// 		return err
+// 	}
+// 	if supplier == nil {
+// 		return fmt.Errorf("supplier not found")
+// 	}
+// 	sqlStr := "UPDATE suppliers SET balance = balance + ? WHERE id = ?"
+// 	_, err = db.Exec(sqlStr, amount*100, supplierID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 func SupplierList() ([]Supplier, error) {
 	var suppliers []Supplier
@@ -181,9 +285,20 @@ func UpdateSupplierProductFacePrice(supplierProduct *SupplierProduct) error {
 	return nil
 }
 
+func SupplierProductListBySupplierID(supplierID int) ([]SupplierProduct, error) {
+	var supplierProducts []SupplierProduct
+	sqlStr := "SELECT * FROM supplier_products WHERE supplier_id = ?"
+	err := db.Select(&supplierProducts, sqlStr, supplierID)
+	if err != nil {
+		return nil, err
+	}
+	return supplierProducts, nil
+}
+
 func SupplierProductList() ([]SupplierProduct, error) {
 	var supplierProducts []SupplierProduct
-	err := db.Select(&supplierProducts, "SELECT * FROM supplier_products")
+	sqlStr := "SELECT * FROM supplier_products"
+	err := db.Select(&supplierProducts, sqlStr)
 	if err != nil {
 		return nil, err
 	}

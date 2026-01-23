@@ -13,6 +13,12 @@ func InitRouter() *gin.Engine {
 	// CORS中间件
 	r.Use(middleware.CORS())
 
+	// 静态文件服务
+	r.Static("/uploads", "./uploads")
+
+	// 上传文件
+	r.POST("/upload", controller.Upload)
+
 	// 供应商API端点
 	r.GET("/supplier", controller.SupplierList)
 	r.POST("/supplier", controller.CreateSupplier)
@@ -21,6 +27,9 @@ func InitRouter() *gin.Engine {
 	r.POST("/supplier/product", controller.CreateSupplierProduct)
 	r.PUT("/supplier/product", controller.UpdateSupplierProduct)
 	r.POST("/supplier/recharge", controller.RechargeSupplier)
+	r.GET("/supplier/recharge", controller.GetSupplierRechargeList)
+	r.PUT("/supplier/recharge", controller.UpdateSupplierRecharge)
+	r.GET("/supplier/recharge/history", controller.GetSupplierRechargeHistoryList)
 
 	// 品牌、规格、SKU API端点
 	r.POST("/project", controller.CreateModel)
@@ -52,6 +61,8 @@ func InitRouter() *gin.Engine {
 				product.POST("", controller.CreateProjectProduct)
 				// // 更新产品状态
 				// product.PUT("/:productID", controller.UpdateProductStatus)
+				// 更新项目产品
+				product.PUT("/:productID", controller.UpdateProjectProduct)
 			}
 		}
 
