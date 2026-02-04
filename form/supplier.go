@@ -20,6 +20,9 @@ type SupplierProductReq struct {
 	Page       int  `form:"page"`
 	Size       int  `form:"size"`
 	SupplierID int  `form:"supplierID"`
+	SpecID     int  `form:"specID"`
+	SKUID      int  `form:"skuID"`
+	BrandID    int  `form:"brandID"`
 	Status     *int `form:"status"`
 }
 

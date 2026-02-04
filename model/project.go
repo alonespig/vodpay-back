@@ -26,6 +26,16 @@ type ProjectProduct struct {
 	Version   int       `db:"version" json:"version"`
 }
 
+func GetProjectProductList() ([]ProjectProduct, error) {
+	products := []ProjectProduct{}
+	sqlStr := `SELECT * FROM project_products`
+	err := db.Select(&products, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+
 func CreateProject(project *Project) error {
 	sqlStr := `INSERT INTO projects (channel_id, name, status)
 	 VALUES (:channel_id, :name, :status)`

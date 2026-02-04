@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"vodpay/form"
 	"vodpay/model"
 	"vodpay/service"
@@ -101,6 +102,7 @@ func SupplierProductList(c *gin.Context) {
 		ServerError(c, err.Error())
 		return
 	}
+	log.Printf("supplier product list by info, req: %v", req)
 	products, err := service.SupplierProductList(&req)
 	if err != nil {
 		ServerError(c, err.Error())

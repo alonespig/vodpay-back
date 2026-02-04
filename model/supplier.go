@@ -118,7 +118,7 @@ func CreateSupplierRecharge(recharge *SupplierRecharge) error {
 
 func GetSupplierRechargeList(status int) ([]SupplierRecharge, error) {
 	var recharges []SupplierRecharge
-	sqlStr := fmt.Sprintf("SELECT * FROM supplier_recharges WHERE status = %d", status)
+	sqlStr := fmt.Sprintf("SELECT * FROM supplier_recharges WHERE status = %d order by id ", status)
 	err := db.Select(&recharges, sqlStr)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func GetSupplierRechargeList(status int) ([]SupplierRecharge, error) {
 
 func GetSupplierRechargeHistoryList() ([]SupplierRecharge, error) {
 	var recharges []SupplierRecharge
-	sqlStr := "SELECT * FROM supplier_recharges WHERE status != 1"
+	sqlStr := "SELECT * FROM supplier_recharges WHERE status != 1 order by id desc"
 	err := db.Select(&recharges, sqlStr)
 	if err != nil {
 		return nil, err
@@ -285,10 +285,33 @@ func UpdateSupplierProductFacePrice(supplierProduct *SupplierProduct) error {
 	return nil
 }
 
+func SupplierProductListByInfo(supplierID, specID, skuID, brandID int) ([]SupplierProduct, error) {
+	var supplierProducts []SupplierProduct
+	sqlStr := "SELECT * FROM supplier_products WHERE 1=1 "
+	if supplierID > 0 {
+		sqlStr += fmt.Sprintf("AND supplier_id = %d ", supplierID)
+	}
+	if specID > 0 {
+		sqlStr += fmt.Sprintf("AND spec_id = %d ", specID)
+	}
+	if skuID > 0 {
+		sqlStr += fmt.Sprintf("AND sku_id = %d ", skuID)
+	}
+	if brandID > 0 {
+		sqlStr += fmt.Sprintf("AND brand_id = %d ", brandID)
+	}
+	log.Printf("supplier product list by info, sql: %s", sqlStr)
+	err := db.Select(&supplierProducts, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	return supplierProducts, nil
+}
+
 func SupplierProductListBySupplierID(supplierID int) ([]SupplierProduct, error) {
 	var supplierProducts []SupplierProduct
-	sqlStr := "SELECT * FROM supplier_products WHERE supplier_id = ?"
-	err := db.Select(&supplierProducts, sqlStr, supplierID)
+	sqlStr := fmt.Sprintf("SELECT * FROM supplier_products WHERE supplier_id = %d", supplierID)
+	err := db.Select(&supplierProducts, sqlStr)
 	if err != nil {
 		return nil, err
 	}

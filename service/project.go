@@ -117,7 +117,7 @@ func UpdateSupplierRecharge(form *form.SupplierRecharge) error {
 	if recharge.SupplierID != form.SupplierID {
 		return fmt.Errorf("supplier recharge %d not belong to supplier %d", form.ID, form.SupplierID)
 	}
-	if recharge.Amount != form.Amount {
+	if recharge.Amount != form.Amount*100 {
 		return fmt.Errorf("supplier recharge %d amount not match, expect %d, got %d", form.ID, recharge.Amount, form.Amount)
 	}
 	recharge.Status = *form.Status

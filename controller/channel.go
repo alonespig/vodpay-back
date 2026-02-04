@@ -41,3 +41,25 @@ func UpdateChannel(c *gin.Context) {
 	}
 	Success(c, nil)
 }
+
+func CreateChannelSupplierProduct(c *gin.Context) {
+	var req form.CreateChannelSupplierProductForm
+	if err := c.ShouldBindJSON(&req); err != nil {
+		BadRequest(c, err.Error())
+		return
+	}
+	if err := service.CreateChannelProjectProduct(req.ProjectProductID, req.SupplierProductID); err != nil {
+		Fail(c, 500, err.Error())
+		return
+	}
+	Success(c, nil)
+}
+
+func GetChannelSupplierProductList(c *gin.Context) {
+	list, err := service.GetChannelSupplierProductList()
+	if err != nil {
+		Fail(c, 500, err.Error())
+		return
+	}
+	Success(c, list)
+}

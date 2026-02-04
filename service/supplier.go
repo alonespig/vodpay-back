@@ -130,10 +130,7 @@ func GetSupplierRechargeHistoryList() ([]model.SupplierRecharge, error) {
 }
 
 func SupplierProductList(req *form.SupplierProductReq) ([]model.SupplierProduct, error) {
-	if req.SupplierID == 0 {
-		return model.SupplierProductList()
-	}
-	return model.SupplierProductListBySupplierID(req.SupplierID)
+	return model.SupplierProductListByInfo(req.SupplierID, req.SpecID, req.SKUID, req.BrandID)
 }
 
 func CreateModel(modelName string, name string) error {

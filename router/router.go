@@ -63,9 +63,14 @@ func InitRouter() *gin.Engine {
 				// product.PUT("/:productID", controller.UpdateProductStatus)
 				// 更新项目产品
 				product.PUT("/:productID", controller.UpdateProjectProduct)
+
 			}
 		}
 
 	}
+	// 创建渠道供应商产品
+	r.GET("/product", controller.GetChannelSupplierProductList)
+	r.POST("/product", controller.CreateChannelSupplierProduct)
+
 	return r
 }
