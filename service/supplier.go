@@ -3,20 +3,36 @@ package service
 import (
 	"fmt"
 	"log"
+	"vodpay/dto"
 	"vodpay/form"
-	"vodpay/model"
+	"vodpay/repository"
 )
 
-func SupplierList() ([]model.Supplier, error) {
-	return model.SupplierList()
+func SupplierList() ([]form.SupplierResp, error) {
+	suppliers, err := repository.SupplierList()
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]form.SupplierResp, 0, len(suppliers))
+	for _, supplier := range suppliers {
+		resp = append(resp, form.SupplierResp{
+			ID:        supplier.ID,
+			Name:      supplier.Name,
+			Code:      supplier.Code,
+			Balance:   supplier.Balance,
+			Status:    supplier.Status,
+			CreatedAt: supplier.CreatedAt,
+		})
+	}
+	return resp, nil
 }
 
-func CreateSupplier(supplier *model.Supplier) error {
-	return model.CreateSupplier(supplier)
+func CreateSupplier(supplier *repository.Supplier) error {
+	return repository.CreateSupplier(supplier)
 }
 
 func RechargeSupplier(req *form.RechargeSupplierForm) error {
-	supplier, err := model.GetSupplierByID(req.ID)
+	supplier, err := repository.GetSupplierByID(req.ID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
@@ -24,24 +40,24 @@ func RechargeSupplier(req *form.RechargeSupplierForm) error {
 	if supplier.Name != req.Name {
 		return fmt.Errorf("supplier name not match")
 	}
-	recharge := &model.SupplierRecharge{
+	recharge := &repository.SupplierRecharge{
 		SupplierID:    supplier.ID,
 		SupplierName:  supplier.Name,
 		SupplierCode:  supplier.Code,
 		Amount:        req.Amount,
 		ImageURL:      req.ImageURL,
-		Status:        1, // 1 是审核中
+		Status:        0, // 0 是审核中
 		ApplyUserID:   1, // 1 是管理员
 		ApplyUserName: "admin",
 		AuditUserID:   0,
 		AuditUserName: "",
 		Remark:        nil,
 	}
-	return model.CreateSupplierRecharge(recharge)
+	return repository.CreateSupplierRecharge(recharge)
 }
 
-func UpdateSupplier(supplier *model.Supplier) error {
-	oldSupplier, err := model.GetSupplierByID(supplier.ID)
+func UpdateSupplier(supplier *repository.Supplier) error {
+	oldSupplier, err := repository.GetSupplierByID(supplier.ID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
@@ -49,11 +65,14 @@ func UpdateSupplier(supplier *model.Supplier) error {
 	if oldSupplier.Name != supplier.Name {
 		return fmt.Errorf("supplier name not match")
 	}
-	return model.UpdateSupplierStatus(supplier)
+	if oldSupplier.Status != 0 {
+		return fmt.Errorf("充值已审核过，请勿重复操作")
+	}
+	return repository.UpdateSupplier(supplier)
 }
 
-func UpdateSupplierProduct(supplierProduct *model.SupplierProduct) error {
-	oldProduct, err := model.GetSupplierProductByID(supplierProduct.ID)
+func UpdateSupplierProduct(supplierProduct *repository.SupplierProduct) error {
+	oldProduct, err := repository.GetSupplierProductByID(supplierProduct.ID)
 	if err != nil {
 		log.Printf("get supplier product by id failed, err: %v", err)
 		return err
@@ -61,40 +80,46 @@ func UpdateSupplierProduct(supplierProduct *model.SupplierProduct) error {
 	if oldProduct.Code != supplierProduct.Code {
 		return fmt.Errorf("supplier product code not match")
 	}
-	return model.UpdateSupplierProduct(supplierProduct)
+	return repository.UpdateSupplierProduct(supplierProduct)
 }
 
 func matchSupProductName(spupplierID, skuID, brandID, specID int) (string, error) {
-	total, err := model.SupplierProductName(spupplierID, skuID, brandID, specID)
+	req := &form.SupplierProductReq{
+		SupplierID: spupplierID,
+		SKUID:      skuID,
+		BrandID:    brandID,
+		SpecID:     specID,
+	}
+	products, err := repository.SupplierProductList(req)
 	if err != nil {
 		log.Printf("get supplier product name failed, err: %v", err)
 		return "", err
 	}
-	sku, err := model.GetModelByID("skus", skuID)
+	sku, err := repository.GetSkuByID(skuID)
 	if err != nil {
 		log.Printf("get sku by id failed, err: %v", err)
 		return "", err
 	}
-	brand, err := model.GetModelByID("brands", brandID)
+	brand, err := repository.GetBrandByID(brandID)
 	if err != nil {
 		log.Printf("get brand by id failed, err: %v", err)
 		return "", err
 	}
-	spec, err := model.GetModelByID("specs", specID)
+	spec, err := repository.GetSpecByID(specID)
 	if err != nil {
 		log.Printf("get spec by id failed, err: %v", err)
 		return "", err
 	}
 	name := fmt.Sprintf("%s%s%s", brand.Name, spec.Name, sku.Name)
 
-	if total != 0 {
-		name += fmt.Sprintf("%d", total+1)
+	if len(products) != 0 {
+		name += fmt.Sprintf("%d", len(products)+1)
 	}
 	return name, nil
 }
 
 func CreateSupplierProduct(form *form.SupplierProduct) error {
-	supplier, err := model.GetSupplierByID(form.SupplierID)
+	supplier, err := repository.GetSupplierByID(form.SupplierID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
@@ -104,7 +129,7 @@ func CreateSupplierProduct(form *form.SupplierProduct) error {
 		log.Printf("match supplier product name failed, err: %v", err)
 		return err
 	}
-	product := &model.SupplierProduct{
+	product := &repository.SupplierProduct{
 		Name:         name,
 		SupplierID:   form.SupplierID,
 		Code:         form.Code,
@@ -117,7 +142,7 @@ func CreateSupplierProduct(form *form.SupplierProduct) error {
 		SKUID:        form.SKUID,
 		BrandID:      form.BrandID,
 	}
-	err = model.CreateSupplierProduct(product)
+	err = repository.CreateSupplierProduct(product)
 	if err != nil {
 		log.Printf("create supplier product failed, err: %v", err)
 		return err
@@ -125,22 +150,119 @@ func CreateSupplierProduct(form *form.SupplierProduct) error {
 	return nil
 }
 
-func GetSupplierRechargeHistoryList() ([]model.SupplierRecharge, error) {
-	return model.GetSupplierRechargeHistoryList()
+func GetSupplierRechargeHistoryList() ([]dto.SupplierRecharge, error) {
+	status := 1
+	rechargeList, err := repository.GetSupplierRechargeList(&repository.SupplierRechargeQuery{
+		Status: &status,
+	})
+	if err != nil {
+		log.Printf("get supplier recharge list failed, err: %v", err)
+		return nil, err
+	}
+	resp := make([]dto.SupplierRecharge, 0, len(rechargeList))
+	for _, recharge := range rechargeList {
+		resp = append(resp, dto.SupplierRecharge{
+			ID:            recharge.ID,
+			SupplierName:  recharge.SupplierName,
+			SupplierCode:  recharge.SupplierCode,
+			Amount:        recharge.Amount,
+			Status:        recharge.Status,
+			ApplyUserName: recharge.ApplyUserName,
+			AuditUserName: recharge.AuditUserName,
+			ImageURL:      recharge.ImageURL,
+			Remark:        recharge.Remark,
+			PassAt:        recharge.PassAt,
+			CreatedAt:     recharge.CreatedAt,
+		})
+	}
+	return resp, nil
 }
 
-func SupplierProductList(req *form.SupplierProductReq) ([]model.SupplierProduct, error) {
-	return model.SupplierProductListByInfo(req.SupplierID, req.SpecID, req.SKUID, req.BrandID)
+func SupplierProductList(req *form.SupplierProductReq) ([]dto.SupplierProduct, error) {
+	products, err := repository.SupplierProductList(req)
+	if err != nil {
+		log.Printf("get supplier product list failed, err: %v", err)
+		return nil, err
+	}
+	resp := make([]dto.SupplierProduct, 0, len(products))
+	for _, product := range products {
+		resp = append(resp, dto.SupplierProduct{
+			ID:           product.ID,
+			Name:         product.Name,
+			Code:         product.Code,
+			SupplierID:   product.SupplierID,
+			SupplierName: product.SupplierName,
+			SupplierCode: product.SupplierCode,
+			FacePrice:    product.FacePrice,
+			SpecID:       product.SpecID,
+			SKUID:        product.SKUID,
+			BrandID:      product.BrandID,
+			Price:        product.Price,
+			Status:       product.Status,
+			CreatedAt:    product.CreatedAt,
+		})
+	}
+	return resp, nil
 }
 
 func CreateModel(modelName string, name string) error {
-	return model.CreateModel(modelName, name)
+	if modelName == "brands" {
+		return repository.CreateBrand(&repository.Brand{BaseModel: repository.BaseModel{Name: name}})
+	}
+	if modelName == "specs" {
+		return repository.CreateSpec(&repository.Spec{BaseModel: repository.BaseModel{Name: name}})
+	}
+	if modelName == "skus" {
+		return repository.CreateSku(&repository.Sku{BaseModel: repository.BaseModel{Name: name}})
+	}
+	return fmt.Errorf("invalid model name")
 }
 
-func GetModelByID(modelName string, id int) (*model.BaseModel, error) {
-	return model.GetModelByID(modelName, id)
+func GetBrandList() ([]dto.Brand, error) {
+	brands, err := repository.GetBrandList()
+	if err != nil {
+		log.Printf("get brand list failed, err: %v", err)
+		return nil, err
+	}
+	resp := make([]dto.Brand, 0, len(brands))
+	for _, brand := range brands {
+		resp = append(resp, dto.Brand{
+			ID:        brand.ID,
+			Name:      brand.Name,
+			CreatedAt: brand.CreatedAt,
+		})
+	}
+	return resp, nil
 }
-
-func GetModelList(modelName string) ([]model.BaseModel, error) {
-	return model.GetModelList(modelName)
+func GetSpecList() ([]dto.Spec, error) {
+	specs, err := repository.GetSpecList()
+	if err != nil {
+		log.Printf("get spec list failed, err: %v", err)
+		return nil, err
+	}
+	resp := make([]dto.Spec, 0, len(specs))
+	for _, spec := range specs {
+		resp = append(resp, dto.Spec{
+			ID:        spec.ID,
+			Name:      spec.Name,
+			CreatedAt: spec.CreatedAt,
+		})
+	}
+	return resp, nil
+}
+func GetSkuList() ([]dto.Sku, error) {
+	skus, err := repository.GetSkuList()
+	if err != nil {
+		log.Printf("get sku list failed, err: %v", err)
+		return nil, err
+	}
+	resp := make([]dto.Sku, 0, len(skus))
+	for _, sku := range skus {
+		resp = append(resp, dto.Sku{
+			ID:        sku.ID,
+			Name:      sku.Name,
+			CreatedAt: sku.CreatedAt,
+		})
+	}
+	return resp, nil
 }

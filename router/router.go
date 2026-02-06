@@ -7,8 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitRouter() *gin.Engine {
-	r := gin.Default()
+func InitRouter(r *gin.Engine) {
 
 	// CORS中间件
 	r.Use(middleware.CORS())
@@ -19,58 +18,67 @@ func InitRouter() *gin.Engine {
 	// 上传文件
 	r.POST("/upload", controller.Upload)
 
+	r.GET("/sku", controller.GetSkuList)
+	r.GET("/spec", controller.GetSpecList)
+	r.GET("/brand", controller.GetBrandList)
+
 	// 供应商API端点
-	r.GET("/supplier", controller.SupplierList)
-	r.POST("/supplier", controller.CreateSupplier)
-	r.PUT("/supplier", controller.UpdateSupplier)
-	r.GET("/supplier/product", controller.SupplierProductList)
-	r.POST("/supplier/product", controller.CreateSupplierProduct)
-	r.PUT("/supplier/product", controller.UpdateSupplierProduct)
-	r.POST("/supplier/recharge", controller.RechargeSupplier)
-	r.GET("/supplier/recharge", controller.GetSupplierRechargeList)
-	r.PUT("/supplier/recharge", controller.UpdateSupplierRecharge)
-	r.GET("/supplier/recharge/history", controller.GetSupplierRechargeHistoryList)
+	supplier := r.Group("/supplier")
+	{
+		supplierController := &controller.SupplierController{}
+		// 供应商列表
+		supplier.GET("", supplierController.SupplierList)
+		// 创建供应商
+		supplier.POST("", supplierController.CreateSupplier)
+		// 更新供应商
+		supplier.PUT("", supplierController.UpdateSupplier)
+		// 供应商产品列表
+		supplier.GET("/product", supplierController.SupplierProductList)
+		// 创建供应商产品
+		supplier.POST("/product", supplierController.CreateSupplierProduct)
+		// 更新供应商产品
+		supplier.PUT("/product", supplierController.UpdateSupplierProduct)
+		// 供应商充值
+		supplier.POST("/recharge", supplierController.RechargeSupplier)
+		supplier.GET("/recharge", supplierController.GetSupplierRechargeList)
+		supplier.PUT("/recharge", supplierController.UpdateSupplierRecharge)
+		supplier.GET("/recharge/history", supplierController.GetSupplierRechargeHistoryList)
+	}
 
 	// 品牌、规格、SKU API端点
 	r.POST("/project", controller.CreateModel)
-	r.GET("/project", controller.GetModelList)
+	// r.GET("/project", controller.GetModelList)
 
 	// 渠道API端点
+	channelController := &controller.ChannelController{}
 	channel := r.Group("/channel")
 	{
 		// 创建渠道
-		channel.POST("", controller.CreateChannel)
+		channel.POST("", channelController.CreateChannel)
 		// 渠道列表
-		channel.GET("", controller.GetChannelList)
+		channel.GET("", channelController.GetChannelList)
 		// 更新渠道
-		channel.PUT("", controller.UpdateChannel)
-		project := channel.Group("/:channelID/project")
+		channel.PUT("", channelController.UpdateChannel)
+
+		newproject := channel.Group("/project")
 		{
-			// 项目列表
-			project.GET("", controller.GetProjectListByChannelID)
 			// 创建项目
-			project.POST("", controller.CreateProject)
-			// 更新项目状态
-			project.PUT("/:projectID", controller.UpdateProjectStatus)
+			newproject.GET("", channelController.GetProjectList)
+			newproject.POST("", channelController.CreateProject)
+			newproject.PUT("", channelController.UpdateProject)
 
-			product := project.Group("/:projectID/product")
+			newproduct := newproject.Group("/product")
 			{
-				// // 产品列表
-				product.GET("", controller.GetProductListByProjectID)
-				// // 创建产品
-				product.POST("", controller.CreateProjectProduct)
-				// // 更新产品状态
-				// product.PUT("/:productID", controller.UpdateProductStatus)
-				// 更新项目产品
-				product.PUT("/:productID", controller.UpdateProjectProduct)
-
+				// 创建项目产品
+				newproduct.POST("", channelController.CreateProjectProduct)
+				newproduct.GET("", channelController.GetProjectProductList)
+				newproduct.PUT("", channelController.UpdateProjectProduct)
 			}
 		}
 
 	}
 	// 创建渠道供应商产品
-	r.GET("/product", controller.GetChannelSupplierProductList)
-	r.POST("/product", controller.CreateChannelSupplierProduct)
+	r.GET("/product", channelController.GetChannelSupplierProductList)
+	r.POST("/product", channelController.CreateChannelSupplierProduct)
 
-	return r
 }

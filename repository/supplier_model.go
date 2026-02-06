@@ -3,7 +3,7 @@ package repository
 import "time"
 
 type Supplier struct {
-	ID        int       `gorm:"primaryKey"`
+	ID        int       `gorm:"primaryKey;AutoIncrement"`
 	Name      string    `gorm:"column:name"`
 	Code      string    `gorm:"column:code"`
 	Balance   int       `gorm:"column:balance"`
@@ -12,11 +12,11 @@ type Supplier struct {
 }
 
 func (Supplier) TableName() string {
-	return "vodpay_supplier"
+	return "suppliers"
 }
 
 type SupplierProduct struct {
-	ID           int       `gorm:"primaryKey"`
+	ID           int       `gorm:"primaryKey;AutoIncrement"`
 	Name         string    `gorm:"column:name"`
 	Code         string    `gorm:"column:code"`
 	SupplierID   int       `gorm:"column:supplier_id"`
@@ -28,17 +28,17 @@ type SupplierProduct struct {
 	BrandID      int       `gorm:"column:brand_id"`
 	Price        int       `gorm:"column:price"`
 	Status       int       `gorm:"column:status"`
-	CreatedAt    time.Time `gorm:"column:created_at"`
+	CreatedAt    time.Time `gorm:"column:created_at;AutoCreateTime"`
 }
 
 func (SupplierProduct) TableName() string {
-	return "vodpay_supplier_product"
+	return "supplier_products"
 }
 
 type BaseModel struct {
-	ID        int       `db:"id" json:"id"`
-	Name      string    `db:"name" json:"name"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	ID        int       `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at;AutoCreateTime"`
 }
 
 type Sku struct {
@@ -46,7 +46,7 @@ type Sku struct {
 }
 
 func (Sku) TableName() string {
-	return "vodpay_sku"
+	return "skus"
 }
 
 type Spec struct {
@@ -54,7 +54,7 @@ type Spec struct {
 }
 
 func (Spec) TableName() string {
-	return "vodpay_spec"
+	return "specs"
 }
 
 type Brand struct {
@@ -62,5 +62,26 @@ type Brand struct {
 }
 
 func (Brand) TableName() string {
-	return "vodpay_brand"
+	return "brands"
+}
+
+type SupplierRecharge struct {
+	ID            int        `gorm:"primaryKey;AutoIncrement"`
+	SupplierID    int        `gorm:"column:supplier_id"`
+	SupplierName  string     `gorm:"column:supplier_name"`
+	SupplierCode  string     `gorm:"column:supplier_code"`
+	Amount        int        `gorm:"column:amount"`
+	Status        int        `gorm:"column:status"`
+	ApplyUserID   int        `gorm:"column:apply_user_id"`
+	ApplyUserName string     `gorm:"column:apply_user_name"`
+	AuditUserID   int        `gorm:"column:audit_user_id"`
+	AuditUserName string     `gorm:"column:audit_user_name"`
+	ImageURL      string     `gorm:"column:image_url"`
+	Remark        *string    `gorm:"column:remark"`
+	PassAt        *time.Time `gorm:"column:pass_at"`
+	CreatedAt     time.Time  `gorm:"column:created_at;AutoCreateTime"`
+}
+
+func (SupplierRecharge) TableName() string {
+	return "supplier_recharges"
 }

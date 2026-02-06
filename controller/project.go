@@ -4,33 +4,32 @@ import (
 	"fmt"
 	"strconv"
 	"vodpay/form"
-	"vodpay/model"
 	"vodpay/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func CreateProject(c *gin.Context) {
-	var req struct {
-		Name string `json:"name" binding:"required"`
-	}
-	// 从URL参数中获取channelID
-	channelIDStr := c.Param("channelID")
-	channelID, err := strconv.Atoi(channelIDStr)
-	if err != nil || channelID <= 0 {
-		BadRequest(c, err.Error())
-		return
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	if err := service.CreateProject(channelID, &req.Name); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
+// func CreateProject(c *gin.Context) {
+// 	var req struct {
+// 		Name string `json:"name" binding:"required"`
+// 	}
+// 	// 从URL参数中获取channelID
+// 	channelIDStr := c.Param("channelID")
+// 	channelID, err := strconv.Atoi(channelIDStr)
+// 	if err != nil || channelID <= 0 {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	if err := service.CreateProject(channelID, &req.Name); err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, nil)
+// }
 
 func GetProjectListByChannelID(c *gin.Context) {
 	// 从URL参数中获取channelID
@@ -61,43 +60,6 @@ func UpdateProjectStatus(c *gin.Context) {
 		return
 	}
 	if err := service.UpdateProjectStatus(req.ID, *req.Status); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
-
-func CreateProjectProduct(c *gin.Context) {
-	var req form.ProjectProductForm
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-
-	channelIDStr := c.Param("channelID")
-	channelID, err := strconv.Atoi(channelIDStr)
-	if err != nil || channelID <= 0 {
-		BadRequest(c, err.Error())
-		return
-	}
-
-	projectIDStr := c.Param("projectID")
-	projectID, err := strconv.Atoi(projectIDStr)
-	if err != nil || projectID <= 0 {
-		BadRequest(c, err.Error())
-		return
-	}
-
-	projectProduct := &model.ProjectProduct{
-		ProjectID: projectID,
-		BrandID:   req.BrandID,
-		SpecID:    req.SpecID,
-		SKUID:     req.SKUID,
-		FacePrice: int(req.FacePrice * 100),
-		Price:     int(req.Price * 100),
-	}
-
-	if err := service.CreateProjectProduct(projectProduct); err != nil {
 		Fail(c, 500, err.Error())
 		return
 	}
@@ -151,7 +113,7 @@ func UpdateProjectProduct(c *gin.Context) {
 		BadRequest(c, "productID not match")
 		return
 	}
-	if err := service.UpdateProjectProduct(channelID, projectID, &req); err != nil {
+	if err := service.UpdateProjectProduct(&req); err != nil {
 		Fail(c, 500, err.Error())
 		return
 	}

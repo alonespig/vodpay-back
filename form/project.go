@@ -20,3 +20,13 @@ type UpdateProjectProductForm struct {
 	FacePrice float64 `json:"facePrice" binding:"required"`
 	Price     float64 `json:"price" binding:"required"`
 }
+
+type CreateProjectProductForm struct {
+	SKUID                 int     `json:"skuID" binding:"required"`
+	BrandID               int     `json:"brandID" binding:"required"`
+	SpecID                int     `json:"specID" binding:"required"`
+	ProjectID             int     `json:"projectID" binding:"required"`
+	FacePrice             float64 `json:"facePrice" binding:"required"`
+	Price                 float64 `json:"price" binding:"required"`
+	SupplierProductIDList []int   `json:"supplierProductIDList"`
+}

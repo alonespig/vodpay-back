@@ -64,9 +64,9 @@ func GetProjectListByChannelID(id int) ([]Project, error) {
 	return projects, nil
 }
 
-func UpdateProjectStatus(status, id int) error {
-	sqlStr := `UPDATE projects SET status = ? WHERE id = ?`
-	_, err := db.Exec(sqlStr, status, id)
+func UpdateProjectStatus(project *Project) error {
+	sqlStr := `UPDATE projects SET status = :status WHERE id = :id`
+	_, err := db.NamedExec(sqlStr, project)
 	return err
 }
 

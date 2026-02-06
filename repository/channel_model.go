@@ -3,35 +3,36 @@ package repository
 import "time"
 
 type Channel struct {
-	ID          int       `gorm:"primaryKey" json:"id"`
-	Name        string    `gorm:"column:name" json:"name"`
-	AppID       string    `gorm:"column:app_id" json:"appID"`
-	SecretKey   string    `gorm:"column:secret_key" json:"secretKey"`
-	WhiteList   string    `gorm:"column:white_list" json:"whiteList"`
-	Status      int       `gorm:"column:status" json:"status"`
-	Balance     int       `gorm:"column:balance" json:"balance"`
-	CreditLimit int       `gorm:"column:credit_limit" json:"creditLimit"`
-	CreatedAt   time.Time `gorm:"column:created_at" json:"createdAt"`
+	ID            int       `gorm:"primaryKey;AutoIncrement"`
+	Name          string    `gorm:"column:name"`
+	AppID         string    `gorm:"column:app_id"`
+	SecretKey     string    `gorm:"column:secret_key"`
+	WhiteList     string    `gorm:"column:white_list"`
+	Status        int       `gorm:"column:status"`
+	Balance       int       `gorm:"column:balance"`
+	CreditLimit   int       `gorm:"column:credit_limit"`
+	CreditBalance int       `gorm:"column:credit_balance"`
+	CreatedAt     time.Time `gorm:"column:created_at;AutoCreateTime"`
 }
 
 func (c *Channel) TableName() string {
-	return "vodpay_channel"
+	return "channels"
 }
 
 type Project struct {
-	ID        int       `gorm:"primaryKey"`
+	ID        int       `gorm:"primaryKey;AutoIncrement"`
 	ChannelID int       `gorm:"column:channel_id"`
 	Name      string    `gorm:"column:name"`
 	Status    int       `gorm:"column:status"`
-	CreatedAt time.Time `gorm:"column:created_at"`
+	CreatedAt time.Time `gorm:"column:created_at;AutoCreateTime"`
 }
 
 func (p *Project) TableName() string {
-	return "vodpay_project"
+	return "projects"
 }
 
 type ProjectProduct struct {
-	ID        int       `gorm:"primaryKey"`
+	ID        int       `gorm:"primaryKey;AutoIncrement"`
 	Name      string    `gorm:"column:name"`
 	Status    int       `gorm:"column:status"`
 	ProjectID int       `gorm:"column:project_id"`
@@ -40,10 +41,10 @@ type ProjectProduct struct {
 	SKUID     int       `gorm:"column:sku_id"`
 	FacePrice int       `gorm:"column:face_price"`
 	Price     int       `gorm:"column:price"`
-	CreatedAt time.Time `gorm:"column:created_at"`
+	CreatedAt time.Time `gorm:"column:created_at;AutoCreateTime"`
 	Version   int       `gorm:"column:version"`
 }
 
 func (p *ProjectProduct) TableName() string {
-	return "vodpay_project_product"
+	return "project_products"
 }

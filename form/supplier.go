@@ -1,5 +1,7 @@
 package form
 
+import "time"
+
 type Supplier struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
@@ -57,4 +59,14 @@ type SupplierRecharge struct {
 	Amount     int    `json:"amount" binding:"required,gt=0"`
 	Status     *int   `json:"status" binding:"required,oneof=0 2"`
 	Remark     string `json:"remark"`
+}
+
+// 供应商
+type SupplierResp struct {
+	ID        int       `db:"id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	Code      string    `db:"code" json:"code"`
+	Balance   int       `db:"balance" json:"balance"`
+	Status    int       `db:"status" json:"status"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
