@@ -21,6 +21,11 @@ type UpdateProjectProductForm struct {
 	Price     float64 `json:"price" binding:"required"`
 }
 
+type AddSupplierProductForm struct {
+	ProjectProductID      int   `json:"projectProductID" binding:"required"`
+	SupplierProductIDList []int `json:"supplierProductIDList" binding:"required"`
+}
+
 type CreateProjectProductForm struct {
 	SKUID                 int     `json:"skuID" binding:"required"`
 	BrandID               int     `json:"brandID" binding:"required"`

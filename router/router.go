@@ -47,7 +47,6 @@ func InitRouter(r *gin.Engine) {
 
 	// 品牌、规格、SKU API端点
 	r.POST("/project", controller.CreateModel)
-	// r.GET("/project", controller.GetModelList)
 
 	// 渠道API端点
 	channelController := &controller.ChannelController{}
@@ -73,12 +72,13 @@ func InitRouter(r *gin.Engine) {
 				newproduct.POST("", channelController.CreateProjectProduct)
 				newproduct.GET("", channelController.GetProjectProductList)
 				newproduct.PUT("", channelController.UpdateProjectProduct)
+				newproduct.POST("/add", channelController.AddSupplierProduct)
 			}
 		}
 
 	}
 	// 创建渠道供应商产品
-	r.GET("/product", channelController.GetChannelSupplierProductList)
-	r.POST("/product", channelController.CreateChannelSupplierProduct)
+	// r.GET("/product", channelController.GetChannelSupplierProductList)
+	// r.POST("/product", channelController.CreateChannelSupplierProduct)
 
 }

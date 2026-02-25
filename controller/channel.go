@@ -11,6 +11,7 @@ import (
 type ChannelController struct {
 }
 
+// CreateChannel 创建渠道
 func (*ChannelController) CreateChannel(c *gin.Context) {
 	var req form.CreateChannelForm
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -24,6 +25,7 @@ func (*ChannelController) CreateChannel(c *gin.Context) {
 	Success(c, nil)
 }
 
+// GetChannelList 获取渠道列表
 func (*ChannelController) GetChannelList(c *gin.Context) {
 	list, err := service.GetChannelList()
 	if err != nil {
@@ -33,6 +35,7 @@ func (*ChannelController) GetChannelList(c *gin.Context) {
 	Success(c, list)
 }
 
+// UpdateChannel 更新渠道
 func (*ChannelController) UpdateChannel(c *gin.Context) {
 	var req form.UpdateChannelForm
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,27 +49,28 @@ func (*ChannelController) UpdateChannel(c *gin.Context) {
 	Success(c, nil)
 }
 
-func (*ChannelController) CreateChannelSupplierProduct(c *gin.Context) {
-	var req form.CreateChannelSupplierProductForm
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	if err := service.CreateChannelProjectProduct(req.ProjectProductID, req.SupplierProductID); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
+// CreateChannelSupplierProduct 创建渠道供应商产品
+// func (*ChannelController) CreateChannelSupplierProduct(c *gin.Context) {
+// 	var req form.CreateChannelSupplierProductForm
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	if err := service.CreateChannelProjectProduct(req.ProjectProductID, req.SupplierProductID); err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, nil)
+// }
 
-func (*ChannelController) GetChannelSupplierProductList(c *gin.Context) {
-	list, err := service.GetChannelSupplierProductList()
-	if err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, list)
-}
+// func (*ChannelController) GetChannelSupplierProductList(c *gin.Context) {
+// 	list, err := service.GetChannelSupplierProductList()
+// 	if err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, list)
+// }
 
 func (*ChannelController) GetProjectList(c *gin.Context) {
 	var req form.ProjectQueryForm
@@ -129,6 +133,19 @@ func (*ChannelController) UpdateProjectProduct(c *gin.Context) {
 		return
 	}
 	if err := service.UpdateProjectProduct(&req); err != nil {
+		Fail(c, 500, err.Error())
+		return
+	}
+	Success(c, nil)
+}
+
+func (*ChannelController) AddSupplierProduct(c *gin.Context) {
+	var req form.AddSupplierProductForm
+	if err := c.ShouldBindJSON(&req); err != nil {
+		BadRequest(c, err.Error())
+		return
+	}
+	if err := service.AddSupplierProduct(&req); err != nil {
 		Fail(c, 500, err.Error())
 		return
 	}

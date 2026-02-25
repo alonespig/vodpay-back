@@ -263,3 +263,32 @@ func GetProjectProductList(q *form.ProjectProductQueryForm) (*dto.ProjectProduct
 	}
 	return resp, nil
 }
+
+func AddSupplierProduct(form *form.AddSupplierProductForm) error {
+	// 检查项目产品是否存在
+	_, err := repository.GetProjectProductByID(form.ProjectProductID)
+	if err != nil {
+		log.Printf("get project product by id failed, err: %v", err)
+		return err
+	}
+	// 检查供应商产品是否存在
+	for _, supplierProductID := range form.SupplierProductIDList {
+		_, err := repository.GetSupplierProductByID(supplierProductID)
+		if err != nil {
+			log.Printf("get supplier product by id failed, err: %v", err)
+			return err
+		}
+	}
+	addList := make([]repository.ProductRelation, 0, len(form.SupplierProductIDList))
+	for _, supplierProductID := range form.SupplierProductIDList {
+		addList = append(addList, repository.ProductRelation{
+			ChannelProductID:  form.ProjectProductID,
+			SupplierProductID: supplierProductID,
+		})
+	}
+	if err := repository.CreateProductRelationList(addList); err != nil {
+		log.Printf("create product relation list failed, err: %v", err)
+		return err
+	}
+	return nil
+}

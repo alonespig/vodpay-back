@@ -57,16 +57,10 @@ func RechargeSupplier(req *form.RechargeSupplierForm) error {
 }
 
 func UpdateSupplier(supplier *repository.Supplier) error {
-	oldSupplier, err := repository.GetSupplierByID(supplier.ID)
+	_, err := repository.GetSupplierByID(supplier.ID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
-	}
-	if oldSupplier.Name != supplier.Name {
-		return fmt.Errorf("supplier name not match")
-	}
-	if oldSupplier.Status != 0 {
-		return fmt.Errorf("充值已审核过，请勿重复操作")
 	}
 	return repository.UpdateSupplier(supplier)
 }

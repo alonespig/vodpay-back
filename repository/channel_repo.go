@@ -115,6 +115,10 @@ func CreateProductRelation(relations []ProductRelation) error {
 	return database.DB.Create(&relations).Error
 }
 
+func CreateProductRelationList(relations []ProductRelation) error {
+	return database.DB.Create(&relations).Error
+}
+
 func GetProjectProductByID(id int) (*ProjectProduct, error) {
 	var product ProjectProduct
 	err := database.DB.Where("id = ?", id).First(&product).Error

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"log"
 	"vodpay/database"
 	"vodpay/form"
 
@@ -43,7 +44,11 @@ func GetSupplierByCode(code string) (*Supplier, error) {
 }
 
 func UpdateSupplier(supplier *Supplier) error {
-	return database.DB.Updates(supplier).Error
+	return database.DB.Model(&Supplier{}).
+		Where("id = ?", supplier.ID).
+		Updates(map[string]interface{}{
+			"status": supplier.Status,
+		}).Error
 }
 
 func CreateSupplierRecharge(recharge *SupplierRecharge) error {
@@ -98,6 +103,8 @@ func SupplierProductList(req *form.SupplierProductReq) ([]SupplierProduct, error
 
 	var products []SupplierProduct
 	db := database.DB
+
+	log.Println("[supplier product list] req : ", req)
 
 	if req.SupplierID != 0 {
 		db = db.Where("supplier_id = ?", req.SupplierID)
