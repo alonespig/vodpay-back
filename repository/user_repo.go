@@ -15,6 +15,15 @@ func CreateUser(user *User) error {
 	return nil
 }
 
+func CheckUserExist(name string) (bool, error) {
+	var count int64
+	err := database.DB.Model(&User{}).Where("name = ?", name).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func GetUserByName(name string) (*User, error) {
 	var user User
 	err := database.DB.Where("name = ?", name).First(&user).Error

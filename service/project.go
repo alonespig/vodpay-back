@@ -1,11 +1,15 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"vodpay/dto"
 	"vodpay/form"
 	"vodpay/repository"
+
+	"gorm.io/gorm"
 )
 
 func CreateProject(form *form.CreateProjectForm) error {
@@ -18,6 +22,27 @@ func CreateProject(form *form.CreateProjectForm) error {
 		Name:      *form.Name,
 		Status:    1,
 	})
+}
+
+func GetProjectsList(channelID int) (*form.ProjectListResp, error) {
+	projects, err := repository.GetProjectList(&repository.ProjectQuery{ChannelID: &channelID})
+	if err != nil {
+		log.Printf("[GetProjectsList] channelID = %d: %v", channelID, err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrChannelNotExist
+		}
+		return nil, ErrSystemError
+	}
+	var projectList []form.Project
+	for _, project := range projects {
+		projectList = append(projectList, form.Project{
+			ID:   project.ID,
+			Name: project.Name,
+		})
+	}
+	return &form.ProjectListResp{
+		ProjectList: projectList,
+	}, nil
 }
 
 func GetProjectListByChannelID(id int) ([]dto.Project, *dto.Channel, error) {
@@ -40,16 +65,15 @@ func GetProjectListByChannelID(id int) ([]dto.Project, *dto.Channel, error) {
 		})
 	}
 	channelDTO := &dto.Channel{
-		ID:            channel.ID,
-		Name:          channel.Name,
-		AppID:         channel.AppID,
-		SecretKey:     channel.SecretKey,
-		WhiteList:     channel.WhiteList,
-		Status:        channel.Status,
-		Balance:       channel.Balance,
-		CreditLimit:   channel.CreditLimit,
-		CreditBalance: channel.CreditBalance,
-		CreatedAt:     channel.CreatedAt,
+		ID:          channel.ID,
+		Name:        channel.Name,
+		AppID:       channel.AppID,
+		SecretKey:   channel.SecretKey,
+		WhiteList:   channel.WhiteList,
+		Status:      channel.Status,
+		Balance:     channel.Balance,
+		CreditLimit: channel.CreditLimit,
+		CreatedAt:   channel.CreatedAt,
 	}
 	return projectDTOs, channelDTO, nil
 }
@@ -67,35 +91,35 @@ func UpdateProjectStatus(projectID, status int) error {
 	return repository.UpdateProject(project)
 }
 
-func projectProductName(projectID, skuID, brandID, specID int) (string, error) {
-	products, err := repository.GetProjectProductList(&repository.ProjectProductQuery{
-		ProjectID: &projectID,
-		SKUID:     &skuID,
-		BrandID:   &brandID,
-		SpecID:    &specID,
-	})
-	if err != nil {
-		log.Printf("get project product name failed, err: %v", err)
-		return "", err
-	}
-	sku, err := repository.GetSkuByID(skuID)
-	if err != nil {
-		log.Printf("get sku by id failed, err: %v", err)
-		return "", err
-	}
-	brand, err := repository.GetBrandByID(brandID)
-	if err != nil {
-		log.Printf("get brand by id failed, err: %v", err)
-		return "", err
-	}
-	spec, err := repository.GetSpecByID(specID)
-	if err != nil {
-		log.Printf("get spec by id failed, err: %v", err)
-		return "", err
-	}
+// func productName(projectID, skuID, brandID, specID int) (string, error) {
+// 	products, err := repository.GetProductList(&repository.ProjectProductQuery{
+// 		ProjectID: &projectID,
+// 		SKUID:     &skuID,
+// 		BrandID:   &brandID,
+// 		SpecID:    &specID,
+// 	})
+// 	if err != nil {
+// 		log.Printf("get product name failed, err: %v", err)
+// 		return "", err
+// 	}
+// 	sku, err := repository.GetSkuByID(skuID)
+// 	if err != nil {
+// 		log.Printf("get sku by id failed, err: %v", err)
+// 		return "", err
+// 	}
+// 	brand, err := repository.GetBrandByID(brandID)
+// 	if err != nil {
+// 		log.Printf("get brand by id failed, err: %v", err)
+// 		return "", err
+// 	}
+// 	spec, err := repository.GetSpecByID(specID)
+// 	if err != nil {
+// 		log.Printf("get spec by id failed, err: %v", err)
+// 		return "", err
+// 	}
 
-	return fmt.Sprintf("%s%s%s-%d", brand.Name, spec.Name, sku.Name, len(products)+1), nil
-}
+// 	return fmt.Sprintf("%s%s%s-%d", brand.Name, spec.Name, sku.Name, len(products)+1), nil
+// }
 
 // func CreateProjectProduct(product *model.ProjectProduct) error {
 // 	name, err := ProjectProductName(product.ProjectID, product.SKUID, product.BrandID, product.SpecID)
@@ -116,40 +140,40 @@ func projectProductName(projectID, skuID, brandID, specID int) (string, error) {
 // 	})
 // }
 
-func GetProjectProductListByProjectID(id int) ([]dto.ProjectProduct, error) {
-	ProjectProduct, err := repository.GetProjectProductList(&repository.ProjectProductQuery{ProjectID: &id})
-	if err != nil {
-		return nil, err
-	}
-	var projectProductDTOs []dto.ProjectProduct
-	for _, product := range ProjectProduct {
-		projectProductDTOs = append(projectProductDTOs, dto.ProjectProduct{
-			ID:        product.ID,
-			Name:      product.Name,
-			Status:    product.Status,
-			ProjectID: product.ProjectID,
-			BrandID:   product.BrandID,
-			SpecID:    product.SpecID,
-			SKUID:     product.SKUID,
-			FacePrice: product.FacePrice,
-			Price:     product.Price,
-			CreatedAt: product.CreatedAt,
-			Version:   product.Version,
-		})
-	}
-	return projectProductDTOs, nil
-}
+// func GetProjectProductListByProjectID(id int) ([]dto.ProjectProduct, error) {
+// 	products, err := repository.GetProductList(&repository.ProjectProductQuery{ProjectID: &id})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	var projectProductDTOs []dto.ProjectProduct
+// 	for _, product := range products {
+// 		projectProductDTOs = append(projectProductDTOs, dto.ProjectProduct{
+// 			ID:        product.ID,
+// 			Name:      product.Name,
+// 			Status:    product.Status,
+// 			ProjectID: product.ProjectID,
+// 			BrandID:   product.BrandID,
+// 			SpecID:    product.SpecID,
+// 			SKUID:     product.SKUID,
+// 			FacePrice: product.FacePrice,
+// 			Price:     product.Price,
+// 			CreatedAt: product.CreatedAt,
+// 			Version:   product.Version,
+// 		})
+// 	}
+// 	return projectProductDTOs, nil
+// }
 
 func UpdateProjectProduct(form *form.UpdateProjectProductForm) error {
-	projectProduct, err := repository.GetProjectProductByID(form.ID)
+	product, err := repository.GetProductByID(form.ID)
 	if err != nil {
 		log.Printf("get project product by id failed, err: %v", err)
 		return err
 	}
-	projectProduct.Status = *form.Status
-	projectProduct.FacePrice = int(form.FacePrice * 100)
-	projectProduct.Price = int(form.Price * 100)
-	return repository.UpdateProjectProduct(projectProduct)
+	product.Status = *form.Status
+	product.FacePrice = int(form.FacePrice * 100)
+	product.Price = int(form.Price * 100)
+	return repository.UpdateProduct(product)
 }
 
 func GetSupplierRechargeList(status int) ([]dto.SupplierRecharge, error) {
@@ -194,79 +218,87 @@ func UpdateSupplierRecharge(form *form.SupplierRecharge) error {
 	return repository.UpdateSupplierRecharge(recharge)
 }
 
-func GetProjectProductList(q *form.ProjectProductQueryForm) (*dto.ProjectProductResp, error) {
-	project, err := repository.GetProjectByID(*q.ProjectID)
-	if err != nil {
-		log.Printf("get project by id failed, err: %v", err)
-		return nil, err
-	}
-	projectProductList, err := repository.GetProjectProductList(&repository.ProjectProductQuery{
-		ProjectID: q.ProjectID,
-	})
-	if err != nil {
-		log.Printf("get project product list failed, err: %v", err)
-		return nil, err
-	}
-	resp := &dto.ProjectProductResp{
-		ProjectName: project.Name,
-		ProductList: make([]dto.ProjectProductItem, 0, len(projectProductList)),
-	}
+// func GetProjectProductList(q *form.ProjectProductQueryForm) (*dto.ProjectProductResp, error) {
+// 	project, err := repository.GetProjectByID(*q.ProjectID)
+// 	if err != nil {
+// 		log.Printf("get project by id failed, err: %v", err)
+// 		return nil, err
+// 	}
+// 	projectProductList, err := repository.GetProductList(&repository.ProjectProductQuery{
+// 		ProjectID: q.ProjectID,
+// 	})
+// 	if err != nil {
+// 		log.Printf("get project product list failed, err: %v", err)
+// 		return nil, err
+// 	}
+// 	resp := &dto.ProjectProductResp{
+// 		ProjectName: project.Name,
+// 		ProductList: make([]dto.ProjectProductItem, 0, len(projectProductList)),
+// 	}
 
-	for _, product := range projectProductList {
-		// 获取这个产品的供应商的产品id
-		relations, err := repository.GetProductRelationList(product.ID)
-		if err != nil {
-			log.Printf("get product relation list failed, err: %v", err)
-			return nil, err
-		}
-		dtoProduct := dto.ProjectProduct{
-			ID:        product.ID,
-			Name:      product.Name,
-			Status:    product.Status,
-			ProjectID: product.ProjectID,
-			BrandID:   product.BrandID,
-			SpecID:    product.SpecID,
-			SKUID:     product.SKUID,
-			FacePrice: product.FacePrice,
-			Price:     product.Price,
-			CreatedAt: product.CreatedAt,
-			Version:   product.Version,
-		}
-		resp.ProductList = append(resp.ProductList, dto.ProjectProductItem{
-			ProjectProduct:      dtoProduct,
-			SupplierProductList: make([]dto.SupplierProduct, 0, len(relations)),
-		})
-		for _, relation := range relations {
-			supplierProduct, err := repository.GetSupplierProductByID(relation.SupplierProductID)
-			if err != nil {
-				log.Printf("get supplier product by id failed, err: %v", err)
-				return nil, err
-			}
-
-			dtoSuProduct := dto.SupplierProduct{
-				ID:           supplierProduct.ID,
-				Name:         supplierProduct.Name,
-				Code:         supplierProduct.Code,
-				SupplierID:   supplierProduct.SupplierID,
-				SupplierName: supplierProduct.SupplierName,
-				SupplierCode: supplierProduct.SupplierCode,
-				Status:       supplierProduct.Status,
-				BrandID:      supplierProduct.BrandID,
-				SpecID:       supplierProduct.SpecID,
-				SKUID:        supplierProduct.SKUID,
-				FacePrice:    supplierProduct.FacePrice,
-				Price:        supplierProduct.Price,
-				CreatedAt:    supplierProduct.CreatedAt,
-			}
-			resp.ProductList[len(resp.ProductList)-1].SupplierProductList = append(resp.ProductList[len(resp.ProductList)-1].SupplierProductList, dtoSuProduct)
-		}
-	}
-	return resp, nil
-}
+// 	for _, product := range projectProductList {
+// 		// 获取这个产品的供应商的产品id
+// 		relations, err := repository.GetProductRelationList(product.ID)
+// 		if err != nil {
+// 			log.Printf("get product relation list failed, err: %v", err)
+// 			return nil, err
+// 		}
+// 		supplierProduct, _ := repository.GetSupplierProductByCode(product.SupplierID, product.SupplierProductCode)
+// 		dtoProduct := dto.ProjectProduct{
+// 			ID:                  product.ID,
+// 			Name:                product.Name,
+// 			Status:              product.Status,
+// 			ProjectID:           product.ProjectID,
+// 			BrandID:             product.BrandID,
+// 			SpecID:              product.SpecID,
+// 			SKUID:               product.SKUID,
+// 			FacePrice:           product.FacePrice,
+// 			Price:               product.Price,
+// 			SupplierID:          product.SupplierID,
+// 			SupplierName:        product.SupplierName,
+// 			SupplierPrice:       supplierProduct.Price,
+// 			SupplierProductID:   product.SupplierProductID,
+// 			SupplierProductName: supplierProduct.Name,
+// 			Model:               product.Model,
+// 			CreatedAt:           product.CreatedAt,
+// 			Version:             product.Version,
+// 		}
+// 		resp.ProductList = append(resp.ProductList, dto.ProjectProductItem{
+// 			ProjectProduct:      dtoProduct,
+// 			SupplierProductList: make([]dto.RelatedSupplierProduct, 0, len(relations)),
+// 		})
+// 		for _, relation := range relations {
+// 			supplierProduct, err := repository.GetSupplierProductByID(relation.SupplierProductID)
+// 			if err != nil {
+// 				log.Printf("get supplier product by id failed, err: %v", err)
+// 				return nil, err
+// 			}
+// 			dtoSuProduct := dto.RelatedSupplierProduct{
+// 				ID:                  relation.ID,
+// 				Name:                supplierProduct.Name,
+// 				Code:                supplierProduct.Code,
+// 				SupplierID:          supplierProduct.SupplierID,
+// 				SupplierName:        supplierProduct.SupplierName,
+// 				SupplierCode:        supplierProduct.SupplierCode,
+// 				SupplierProductID:   supplierProduct.ID,
+// 				SupplierProductName: supplierProduct.Name,
+// 				Status:              relation.Status,
+// 				BrandID:             supplierProduct.BrandID,
+// 				SpecID:              supplierProduct.SpecID,
+// 				SKUID:               supplierProduct.SKUID,
+// 				FacePrice:           supplierProduct.FacePrice,
+// 				Price:               supplierProduct.Price,
+// 				CreatedAt:           supplierProduct.CreatedAt,
+// 			}
+// 			resp.ProductList[len(resp.ProductList)-1].SupplierProductList = append(resp.ProductList[len(resp.ProductList)-1].SupplierProductList, dtoSuProduct)
+// 		}
+// 	}
+// 	return resp, nil
+// }
 
 func AddSupplierProduct(form *form.AddSupplierProductForm) error {
 	// 检查项目产品是否存在
-	_, err := repository.GetProjectProductByID(form.ProjectProductID)
+	_, err := repository.GetProductByID(form.ProjectProductID)
 	if err != nil {
 		log.Printf("get project product by id failed, err: %v", err)
 		return err
@@ -291,4 +323,60 @@ func AddSupplierProduct(form *form.AddSupplierProductForm) error {
 		return err
 	}
 	return nil
+}
+
+// GetProductSupplierList 获取产品的供应商产品列表
+func GetProductSupplierList(productID int) (*form.ProductSupplierResp, error) {
+	product, err := repository.GetProductByID(productID)
+	if err != nil {
+		return nil, err
+	}
+	productSupplierList, err := repository.GetProductSupplierList(product.ID)
+	if err != nil {
+		return nil, err
+	}
+	channelName, _ := repository.GetChannelNameByID(product.ChannelID)
+
+	projectName, _ := repository.GetProjectNameByID(product.ProjectID)
+
+	resp := &form.ProductSupplierResp{
+		ChannelName: channelName,
+		ProjectName: projectName,
+		ProductName: product.Name,
+		Product: form.Product{
+			ID:                product.ID,
+			Name:              product.Name,
+			Status:            product.Status,
+			SupplierProductID: product.SupplierProductID,
+			// SupplierProductCode: product.SupplierProductCode,
+			FacePrice: product.FacePrice,
+			Price:     product.Price,
+			Model:     product.Model,
+		},
+		SupplierList: make([]form.ProductSupplier, 0, len(productSupplierList)),
+	}
+	for _, relation := range productSupplierList {
+		supplierProduct, err := repository.GetSupplierProductByID(relation.SupplierProductID)
+		if err != nil {
+			return nil, err
+		}
+		resp.SupplierList = append(resp.SupplierList, form.ProductSupplier{
+			ID:                  relation.ID,
+			SupplierID:          supplierProduct.SupplierID,
+			SupplierName:        supplierProduct.SupplierName,
+			SupplierCode:        supplierProduct.SupplierCode,
+			SupplierProductID:   supplierProduct.ID,
+			SupplierProductCode: supplierProduct.Code,
+			SupplierProductName: supplierProduct.Name,
+			FacePrice:           supplierProduct.FacePrice,
+			Price:               supplierProduct.Price,
+			Status:              relation.Status,
+		})
+	}
+
+	sort.Slice(resp.SupplierList, func(i, j int) bool {
+		return resp.SupplierList[i].Price < resp.SupplierList[j].Price
+	})
+
+	return resp, nil
 }

@@ -57,22 +57,46 @@ type SupplierRecharge struct {
 }
 
 type ProjectProduct struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Status    int       `json:"status"`
-	ProjectID int       `json:"projectID"`
-	BrandID   int       `json:"brandID"`
-	SpecID    int       `json:"specID"`
-	SKUID     int       `json:"skuID"`
-	FacePrice int       `json:"facePrice"`
-	Price     int       `json:"price"`
-	CreatedAt time.Time `json:"createdAt"`
-	Version   int       `json:"version"`
+	ID                  int       `json:"id"`
+	Name                string    `json:"name"`
+	Status              int       `json:"status"`
+	ProjectID           int       `json:"projectID"`
+	BrandID             int       `json:"brandID"`
+	SpecID              int       `json:"specID"`
+	SKUID               int       `json:"skuID"`
+	SupplierID          int       `json:"supplierID,omitempty"`
+	SupplierName        string    `json:"supplierName,omitempty"`
+	SupplierPrice       int       `json:"supplierPrice,omitempty"`
+	SupplierProductName string    `json:"supplierProductName,omitempty"`
+	SupplierProductID   int       `json:"supplierProductID,omitempty"`
+	FacePrice           int       `json:"facePrice"`
+	Price               int       `json:"price"`
+	Model               int       `json:"model"`
+	CreatedAt           time.Time `json:"createdAt"`
+	Version             int       `json:"version"`
+}
+
+type RelatedSupplierProduct struct {
+	ID                  int       `json:"id"`
+	Name                string    `json:"name"`
+	Code                string    `json:"code"`
+	SupplierID          int       `json:"supplierID"`
+	SupplierName        string    `json:"supplierName"`
+	SupplierCode        string    `json:"supplierCode"`
+	SupplierProductID   int       `json:"supplierProductID"`
+	SupplierProductName string    `json:"supplierProductName"`
+	FacePrice           int       `json:"facePrice"`
+	SpecID              int       `json:"specID"`
+	SKUID               int       `json:"skuID"`
+	BrandID             int       `json:"brandID"`
+	Price               int       `json:"price"`
+	Status              int       `json:"status"`
+	CreatedAt           time.Time `json:"createdAt"`
 }
 
 type ProjectProductItem struct {
 	ProjectProduct      `json:"product"`
-	SupplierProductList []SupplierProduct `json:"supplierProductList"`
+	SupplierProductList []RelatedSupplierProduct `json:"supplierProductList"`
 }
 
 type ProjectProductResp struct {

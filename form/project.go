@@ -26,12 +26,32 @@ type AddSupplierProductForm struct {
 	SupplierProductIDList []int `json:"supplierProductIDList" binding:"required"`
 }
 
-type CreateProjectProductForm struct {
+type CreateProductForm struct {
 	SKUID                 int     `json:"skuID" binding:"required"`
 	BrandID               int     `json:"brandID" binding:"required"`
 	SpecID                int     `json:"specID" binding:"required"`
 	ProjectID             int     `json:"projectID" binding:"required"`
 	FacePrice             float64 `json:"facePrice" binding:"required"`
 	Price                 float64 `json:"price" binding:"required"`
+	LimitNum              int     `json:"limitNum"`
+	Model                 *int    `json:"model" binding:"required,oneof=0 1 2"`
 	SupplierProductIDList []int   `json:"supplierProductIDList"`
+}
+
+type ChannelSimple struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Project struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type ProjectListResp struct {
+	ProjectList []Project `json:"projectList"`
+}
+
+type BSSListResp struct {
+	BrandSpecSKUList []BaseModel `json:"brandSpecSKUList"`
 }

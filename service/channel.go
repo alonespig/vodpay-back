@@ -34,16 +34,15 @@ func GetChannelList() ([]dto.Channel, error) {
 	channelDTOList := make([]dto.Channel, 0, len(channelList))
 	for _, channel := range channelList {
 		channelDTOList = append(channelDTOList, dto.Channel{
-			ID:            channel.ID,
-			Name:          channel.Name,
-			AppID:         channel.AppID,
-			SecretKey:     channel.SecretKey,
-			WhiteList:     channel.WhiteList,
-			Status:        channel.Status,
-			Balance:       channel.Balance,
-			CreditLimit:   channel.CreditLimit,
-			CreditBalance: channel.CreditBalance,
-			CreatedAt:     channel.CreatedAt,
+			ID:          channel.ID,
+			Name:        channel.Name,
+			AppID:       channel.AppID,
+			SecretKey:   channel.SecretKey,
+			WhiteList:   channel.WhiteList,
+			Status:      channel.Status,
+			Balance:     channel.Balance,
+			CreditLimit: channel.CreditLimit,
+			CreatedAt:   channel.CreatedAt,
 		})
 	}
 	return channelDTOList, nil
@@ -55,16 +54,15 @@ func GetChannelByID(id int) (*dto.Channel, error) {
 		return nil, err
 	}
 	return &dto.Channel{
-		ID:            channelModel.ID,
-		Name:          channelModel.Name,
-		AppID:         channelModel.AppID,
-		SecretKey:     channelModel.SecretKey,
-		WhiteList:     channelModel.WhiteList,
-		Status:        channelModel.Status,
-		Balance:       channelModel.Balance,
-		CreditLimit:   channelModel.CreditLimit,
-		CreditBalance: channelModel.CreditBalance,
-		CreatedAt:     channelModel.CreatedAt,
+		ID:          channelModel.ID,
+		Name:        channelModel.Name,
+		AppID:       channelModel.AppID,
+		SecretKey:   channelModel.SecretKey,
+		WhiteList:   channelModel.WhiteList,
+		Status:      channelModel.Status,
+		Balance:     channelModel.Balance,
+		CreditLimit: channelModel.CreditLimit,
+		CreatedAt:   channelModel.CreatedAt,
 	}, nil
 }
 
@@ -87,12 +85,14 @@ func GetProjectList(query *form.ProjectQueryForm) (*dto.ProjectListResp, error) 
 		ChannelID: query.ChannelID,
 	})
 	if err != nil {
-		return nil, err
+		log.Printf("[GetProjectList] channelID = %d: %v", *query.ChannelID, err)
+		return nil, ErrSystemError
 	}
 
 	channel, err := repository.GetChannelByID(*query.ChannelID)
 	if err != nil {
-		return nil, err
+		log.Printf("[GetProjectList] channelID = %d: %v", *query.ChannelID, err)
+		return nil, ErrSystemError
 	}
 
 	resp := &dto.ProjectListResp{
@@ -112,41 +112,59 @@ func GetProjectList(query *form.ProjectQueryForm) (*dto.ProjectListResp, error) 
 	return resp, nil
 }
 
-func CreateProjectProduct(form *form.CreateProjectProductForm) error {
-	name, err := projectProductName(form.ProjectID, form.SKUID, form.BrandID, form.SpecID)
-	if err != nil {
-		log.Printf("match supplier product name failed, err: %v", err)
-		return err
-	}
-	// 转换为分
-	facePrice := int(form.FacePrice * 100)
-	price := int(form.Price * 100)
+// func CreateProjectProduct(form *form.CreateProductForm) error {
+// 	name, err := productName(form.ProjectID, form.SKUID, form.BrandID, form.SpecID)
+// 	if err != nil {
+// 		log.Printf("match supplier product name failed, err: %v", err)
+// 		return err
+// 	}
+// 	// 转换为分
+// 	facePrice := int(form.FacePrice * 100)
+// 	price := int(form.Price * 100)
 
-	productID, err := repository.CreateProjectProduct(&repository.ProjectProduct{
-		Name:      name,
-		Status:    1,
-		ProjectID: form.ProjectID,
-		BrandID:   form.BrandID,
-		SpecID:    form.SpecID,
-		SKUID:     form.SKUID,
-		FacePrice: facePrice,
-		Price:     price,
-	})
-	if err != nil {
-		return err
-	}
+// 	productID, err := repository.CreateProduct(&repository.Product{
+// 		Name:      name,
+// 		Status:    1,
+// 		ProjectID: form.ProjectID,
+// 		BrandID:   form.BrandID,
+// 		SpecID:    form.SpecID,
+// 		SKUID:     form.SKUID,
+// 		FacePrice: facePrice,
+// 		Price:     price,
+// 		Model:     *form.Model,
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if len(form.SupplierProductIDList) == 0 {
-		return nil
-	}
+// 	if len(form.SupplierProductIDList) == 0 {
+// 		return nil
+// 	}
 
-	relations := make([]repository.ProductRelation, 0, len(form.SupplierProductIDList))
-	for _, supplierProductID := range form.SupplierProductIDList {
-		relations = append(relations, repository.ProductRelation{
-			ChannelProductID:  productID,
-			SupplierProductID: supplierProductID,
-			Status:            1,
-		})
-	}
-	return repository.CreateProductRelation(relations)
-}
+// 	relations := make([]repository.ProductRelation, 0, len(form.SupplierProductIDList))
+// 	for _, supplierProductID := range form.SupplierProductIDList {
+// 		relations = append(relations, repository.ProductRelation{
+// 			ChannelProductID:  productID,
+// 			SupplierProductID: supplierProductID,
+// 			Status:            1,
+// 		})
+// 	}
+// 	err = repository.CreateProductRelation(relations)
+// 	if err != nil {
+// 		return nil
+// 	}
+
+// 	supplierProduct, err := repository.GetSupplierProductByID(form.SupplierProductIDList[0])
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	supplier, err := repository.GetSupplierByID(supplierProduct.SupplierID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	_ = repository.ChangeProductSupplier(productID, supplier, supplierProduct)
+
+// 	return nil
+// }

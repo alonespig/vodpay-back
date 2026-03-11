@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"sort"
 	"vodpay/dto"
 	"vodpay/form"
 	"vodpay/repository"
@@ -78,63 +79,66 @@ func UpdateSupplierProduct(supplierProduct *repository.SupplierProduct) error {
 }
 
 func matchSupProductName(spupplierID, skuID, brandID, specID int) (string, error) {
-	req := &form.SupplierProductReq{
-		SupplierID: spupplierID,
-		SKUID:      skuID,
-		BrandID:    brandID,
-		SpecID:     specID,
-	}
-	products, err := repository.SupplierProductList(req)
+	brandSpecSKU, err := GetOrCreateBrandSpecSKU(brandID, specID, skuID)
 	if err != nil {
-		log.Printf("get supplier product name failed, err: %v", err)
+		log.Printf("get or create brand spec sku failed, err: %v", err)
 		return "", err
 	}
-	sku, err := repository.GetSkuByID(skuID)
-	if err != nil {
-		log.Printf("get sku by id failed, err: %v", err)
-		return "", err
-	}
-	brand, err := repository.GetBrandByID(brandID)
-	if err != nil {
-		log.Printf("get brand by id failed, err: %v", err)
-		return "", err
-	}
-	spec, err := repository.GetSpecByID(specID)
-	if err != nil {
-		log.Printf("get spec by id failed, err: %v", err)
-		return "", err
-	}
-	name := fmt.Sprintf("%s%s%s", brand.Name, spec.Name, sku.Name)
+	name := brandSpecSKU.Name
 
-	if len(products) != 0 {
-		name += fmt.Sprintf("%d", len(products)+1)
+	count, err := repository.GetSupplierProductCount(&repository.SupplierProductQuery{
+		SupplierID:     spupplierID,
+		BrandSpecSKUID: brandSpecSKU.ID,
+	})
+	if err != nil {
+		log.Printf("get supplier product count failed, err: %v", err)
+		return "", err
+	}
+
+	if count != 0 {
+		name += fmt.Sprintf("%d", count+1)
 	}
 	return name, nil
 }
 
-func CreateSupplierProduct(form *form.SupplierProduct) error {
+func CreateSupplierProduct(form *form.CreateSupplierProductReq) error {
 	supplier, err := repository.GetSupplierByID(form.SupplierID)
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
 	}
-	name, err := matchSupProductName(form.SupplierID, form.SKUID, form.BrandID, form.SpecID)
+	brandSpecSKU, err := GetOrCreateBrandSpecSKU(form.BrandID, form.SpecID, form.SKUID)
 	if err != nil {
-		log.Printf("match supplier product name failed, err: %v", err)
+		log.Printf("get or create brand spec sku failed, err: %v", err)
 		return err
 	}
+	name := brandSpecSKU.Name
+
+	count, err := repository.GetSupplierProductCount(&repository.SupplierProductQuery{
+		SupplierID:     form.SupplierID,
+		BrandSpecSKUID: brandSpecSKU.ID,
+	})
+	if err != nil {
+		log.Printf("get supplier product count failed, err: %v", err)
+		return err
+	}
+
+	if count != 0 {
+		name += fmt.Sprintf("-%d", count+1)
+	}
 	product := &repository.SupplierProduct{
-		Name:         name,
-		SupplierID:   form.SupplierID,
-		Code:         form.Code,
-		SupplierName: supplier.Name,
-		SupplierCode: supplier.Code,
-		Status:       1,
-		FacePrice:    int(form.FacePrice * 100),
-		Price:        int(form.Price * 100),
-		SpecID:       form.SpecID,
-		SKUID:        form.SKUID,
-		BrandID:      form.BrandID,
+		Name:           name,
+		SupplierID:     form.SupplierID,
+		Code:           form.Code,
+		SupplierName:   supplier.Name,
+		SupplierCode:   supplier.Code,
+		BrandSpecSKUID: brandSpecSKU.ID,
+		Status:         1,
+		FacePrice:      int(form.FacePrice * 100),
+		Price:          int(form.Price * 100),
+		SpecID:         form.SpecID,
+		SKUID:          form.SKUID,
+		BrandID:        form.BrandID,
 	}
 	err = repository.CreateSupplierProduct(product)
 	if err != nil {
@@ -172,15 +176,28 @@ func GetSupplierRechargeHistoryList() ([]dto.SupplierRecharge, error) {
 	return resp, nil
 }
 
-func SupplierProductList(req *form.SupplierProductReq) ([]dto.SupplierProduct, error) {
-	products, err := repository.SupplierProductList(req)
+func SupplierProduct(supplierID int) (*form.SupplierProductResp, error) {
+	total, products, err := repository.SupplierProductList(&repository.SupplierProductQuery{
+		SupplierID: supplierID,
+	})
 	if err != nil {
 		log.Printf("get supplier product list failed, err: %v", err)
 		return nil, err
 	}
-	resp := make([]dto.SupplierProduct, 0, len(products))
+	resp := form.SupplierProductResp{
+		Supplier: form.Supplier{},
+		Total:    total,
+		Items:    make([]form.SupplierProduct, 0, len(products)),
+	}
+	if len(products) > 0 {
+		resp.Supplier = form.Supplier{
+			ID:   products[0].SupplierID,
+			Code: products[0].SupplierCode,
+			Name: products[0].SupplierName,
+		}
+	}
 	for _, product := range products {
-		resp = append(resp, dto.SupplierProduct{
+		resp.Items = append(resp.Items, form.SupplierProduct{
 			ID:           product.ID,
 			Name:         product.Name,
 			Code:         product.Code,
@@ -196,67 +213,58 @@ func SupplierProductList(req *form.SupplierProductReq) ([]dto.SupplierProduct, e
 			CreatedAt:    product.CreatedAt,
 		})
 	}
-	return resp, nil
+	return &resp, nil
 }
 
-func CreateModel(modelName string, name string) error {
-	if modelName == "brands" {
-		return repository.CreateBrand(&repository.Brand{BaseModel: repository.BaseModel{Name: name}})
+func SupplierProductList(req *form.SupplierProductListReq) (*form.SupplierProductListResp, error) {
+	var brandSpecSKU repository.BrandSpecSKU
+	if req.BrandSpecSKUID != 0 {
+		bss, err := repository.GetBrandSpecSKUByID(req.BrandSpecSKUID)
+		if err != nil {
+			log.Printf("get brand spec sku failed, err: %v", err)
+			return nil, err
+		}
+		brandSpecSKU = *bss
+	} else if req.BrandID != 0 && req.SpecID != 0 && req.SKUID != 0 {
+		bss, err := repository.GetBrandSpecSKUByIDInfo(req.BrandID, req.SpecID, req.SKUID)
+		if err != nil {
+			log.Printf("get brand spec sku failed, err: %v", err)
+			return nil, err
+		}
+		brandSpecSKU = *bss
 	}
-	if modelName == "specs" {
-		return repository.CreateSpec(&repository.Spec{BaseModel: repository.BaseModel{Name: name}})
-	}
-	if modelName == "skus" {
-		return repository.CreateSku(&repository.Sku{BaseModel: repository.BaseModel{Name: name}})
-	}
-	return fmt.Errorf("invalid model name")
-}
-
-func GetBrandList() ([]dto.Brand, error) {
-	brands, err := repository.GetBrandList()
+	total, products, err := repository.SupplierProductList(&repository.SupplierProductQuery{
+		BrandSpecSKUID: brandSpecSKU.ID,
+		Page:           req.Page,
+		PageSize:       req.PageSize,
+	})
 	if err != nil {
-		log.Printf("get brand list failed, err: %v", err)
+		log.Printf("get supplier product list failed, err: %v", err)
 		return nil, err
 	}
-	resp := make([]dto.Brand, 0, len(brands))
-	for _, brand := range brands {
-		resp = append(resp, dto.Brand{
-			ID:        brand.ID,
-			Name:      brand.Name,
-			CreatedAt: brand.CreatedAt,
+	resp := form.SupplierProductListResp{
+		Total: total,
+		Items: make([]form.SupplierProduct, 0, len(products)),
+	}
+	for _, product := range products {
+		resp.Items = append(resp.Items, form.SupplierProduct{
+			ID:           product.ID,
+			Name:         product.Name,
+			Code:         product.Code,
+			SupplierID:   product.SupplierID,
+			SupplierName: product.SupplierName,
+			SupplierCode: product.SupplierCode,
+			FacePrice:    product.FacePrice,
+			SpecID:       product.SpecID,
+			SKUID:        product.SKUID,
+			BrandID:      product.BrandID,
+			Price:        product.Price,
+			Status:       product.Status,
+			CreatedAt:    product.CreatedAt,
 		})
 	}
-	return resp, nil
-}
-func GetSpecList() ([]dto.Spec, error) {
-	specs, err := repository.GetSpecList()
-	if err != nil {
-		log.Printf("get spec list failed, err: %v", err)
-		return nil, err
-	}
-	resp := make([]dto.Spec, 0, len(specs))
-	for _, spec := range specs {
-		resp = append(resp, dto.Spec{
-			ID:        spec.ID,
-			Name:      spec.Name,
-			CreatedAt: spec.CreatedAt,
-		})
-	}
-	return resp, nil
-}
-func GetSkuList() ([]dto.Sku, error) {
-	skus, err := repository.GetSkuList()
-	if err != nil {
-		log.Printf("get sku list failed, err: %v", err)
-		return nil, err
-	}
-	resp := make([]dto.Sku, 0, len(skus))
-	for _, sku := range skus {
-		resp = append(resp, dto.Sku{
-			ID:        sku.ID,
-			Name:      sku.Name,
-			CreatedAt: sku.CreatedAt,
-		})
-	}
-	return resp, nil
+	sort.Slice(resp.Items, func(i, j int) bool {
+		return resp.Items[i].Price < resp.Items[j].Price
+	})
+	return &resp, nil
 }

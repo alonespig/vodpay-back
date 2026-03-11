@@ -3,8 +3,8 @@ package repository
 import (
 	"errors"
 	"log"
+	"vodpay/common"
 	"vodpay/database"
-	"vodpay/form"
 
 	"gorm.io/gorm"
 )
@@ -17,9 +17,10 @@ func GetSupplierByID(id int) (*Supplier, error) {
 	var supplier Supplier
 	if err := database.DB.Where("id = ?", id).First(&supplier).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSupplierNotFound
+			return nil, common.ErrSupplierNotFound
 		}
-		return nil, err
+		log.Println("[get supplier by id] err : ", err)
+		return nil, common.ErrDBQuery
 	}
 	return &supplier, nil
 }
@@ -27,7 +28,8 @@ func GetSupplierByID(id int) (*Supplier, error) {
 func SupplierList() ([]Supplier, error) {
 	var suppliers []Supplier
 	if err := database.DB.Find(&suppliers).Error; err != nil {
-		return nil, err
+		log.Println("[get supplier list] err : ", err)
+		return nil, common.ErrDBQuery
 	}
 	return suppliers, nil
 }
@@ -96,34 +98,79 @@ func UpdateSupplierRecharge(recharge *SupplierRecharge) error {
 	return database.DB.Updates(recharge).Error
 }
 
-func SupplierProductList(req *form.SupplierProductReq) ([]SupplierProduct, error) {
+func GetSupplierProductListByID(supplierID int) ([]SupplierProduct, error) {
+	var products []SupplierProduct
+	if err := database.DB.Where("supplier_id = ?", supplierID).Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+
+type SupplierProductQuery struct {
+	SupplierID     int
+	BrandSpecSKUID int
+	Status         *int
+	Page           int
+	PageSize       int
+}
+
+func SupplierProductList(req *SupplierProductQuery) (int64, []SupplierProduct, error) {
 	if req == nil {
-		req = &form.SupplierProductReq{}
+		req = &SupplierProductQuery{}
 	}
 
 	var products []SupplierProduct
-	db := database.DB
+	db := database.DB.Model(&SupplierProduct{})
+
+	if req.SupplierID != 0 {
+		db = db.Where("supplier_id = ?", req.SupplierID)
+	}
+
+	if req.BrandSpecSKUID != 0 {
+		db = db.Where("brand_spec_sku_id = ?", req.BrandSpecSKUID)
+	}
+
+	if req.Status != nil {
+		db = db.Where("status = ?", *req.Status)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return 0, nil, err
+	}
+
+	if req.Page > 0 && req.PageSize > 0 {
+		db = db.Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize)
+	}
+
+	err := db.Find(&products).Error
+	return total, products, err
+}
+
+func GetSupplierProductCount(req *SupplierProductQuery) (int, error) {
+	if req == nil {
+		req = &SupplierProductQuery{}
+	}
+
+	var count int64
+	db := database.DB.Model(&SupplierProduct{})
 
 	log.Println("[supplier product list] req : ", req)
 
 	if req.SupplierID != 0 {
 		db = db.Where("supplier_id = ?", req.SupplierID)
 	}
-	if req.SpecID != 0 {
-		db = db.Where("spec_id = ?", req.SpecID)
+
+	if req.BrandSpecSKUID != 0 {
+		db = db.Where("brand_spec_sku_id = ?", req.BrandSpecSKUID)
 	}
-	if req.SKUID != 0 {
-		db = db.Where("sku_id = ?", req.SKUID)
-	}
-	if req.BrandID != 0 {
-		db = db.Where("brand_id = ?", req.BrandID)
-	}
+
 	if req.Status != nil {
 		db = db.Where("status = ?", *req.Status)
 	}
 
-	err := db.Find(&products).Error
-	return products, err
+	err := db.Count(&count).Error
+	return int(count), err
 }
 
 func CreateBrand(brand *Brand) error {
@@ -141,7 +188,8 @@ func CreateSku(sku *Sku) error {
 func GetSpecList() ([]Spec, error) {
 	var specs []Spec
 	if err := database.DB.Find(&specs).Error; err != nil {
-		return nil, err
+		log.Println("[get spec list] err : ", err)
+		return nil, common.ErrDBQuery
 	}
 	return specs, nil
 }
@@ -150,9 +198,9 @@ func GetSpecByID(specID int) (*Spec, error) {
 	var spec Spec
 	if err := database.DB.Where("id = ?", specID).First(&spec).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSpecNotFound
+			return nil, common.ErrSpecNotFound
 		}
-		return nil, err
+		return nil, common.ErrDBQuery
 	}
 	return &spec, nil
 }
@@ -161,9 +209,9 @@ func GetSkuByID(skuID int) (*Sku, error) {
 	var sku Sku
 	if err := database.DB.Where("id = ?", skuID).First(&sku).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSkuNotFound
+			return nil, common.ErrSkuNotFound
 		}
-		return nil, err
+		return nil, common.ErrDBQuery
 	}
 	return &sku, nil
 }
@@ -171,7 +219,8 @@ func GetSkuByID(skuID int) (*Sku, error) {
 func GetSkuList() ([]Sku, error) {
 	var skus []Sku
 	if err := database.DB.Find(&skus).Error; err != nil {
-		return nil, err
+		log.Println("[get sku list] err : ", err)
+		return nil, common.ErrDBQuery
 	}
 	return skus, nil
 }
@@ -180,9 +229,9 @@ func GetBrandByID(brandID int) (*Brand, error) {
 	var brand Brand
 	if err := database.DB.Where("id = ?", brandID).First(&brand).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrBrandNotFound
+			return nil, common.ErrBrandNotFound
 		}
-		return nil, err
+		return nil, common.ErrDBQuery
 	}
 	return &brand, nil
 }
@@ -190,7 +239,8 @@ func GetBrandByID(brandID int) (*Brand, error) {
 func GetBrandList() ([]Brand, error) {
 	var brands []Brand
 	if err := database.DB.Find(&brands).Error; err != nil {
-		return nil, err
+		log.Println("[get brand list] err : ", err)
+		return nil, common.ErrDBQuery
 	}
 	return brands, nil
 }
@@ -199,18 +249,39 @@ func CreateSupplierProduct(product *SupplierProduct) error {
 	return database.DB.Create(product).Error
 }
 
+func GetSupplierProductByCode(supplierID int, code string) (SupplierProduct, error) {
+	supplierProduct := SupplierProduct{}
+	err := database.DB.Model(&supplierProduct).
+		Where("supplier_id = ? AND code = ?", supplierID, code).
+		First(&supplierProduct).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return SupplierProduct{}, common.ErrSupplierProductNotFound
+		}
+		log.Printf("[GetSupplierProductByCode] supplierID = %d, code = %s: %v", supplierID, code, err)
+		return SupplierProduct{}, common.ErrDBQuery
+	}
+	return supplierProduct, nil
+}
+
 func GetSupplierProductByID(productID int) (*SupplierProduct, error) {
 	var supplierProduct SupplierProduct
 	err := database.DB.First(&supplierProduct, "id = ?", productID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSupplierProductNotFound
+			return nil, common.ErrSupplierProductNotFound
 		}
-		return nil, err
+		log.Printf("[GetSupplierProductByID] id = %d: %v", productID, err)
+		return nil, common.ErrDBQuery
 	}
 	return &supplierProduct, nil
 }
 
 func UpdateSupplierProduct(supplierProduct *SupplierProduct) error {
-	return database.DB.Updates(supplierProduct).Error
+	err := database.DB.Updates(supplierProduct).Error
+	if err != nil {
+		log.Printf("[UpdateSupplierProduct] id = %d: %v", supplierProduct.ID, err)
+		return common.ErrDBQuery
+	}
+	return nil
 }

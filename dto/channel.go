@@ -43,3 +43,9 @@ type Channel struct {
 	CreditBalance int       `json:"creditBalance"`
 	CreatedAt     time.Time `json:"createdAt"`
 }
+
+type User struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Role int    `json:"role"`
+}

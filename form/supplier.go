@@ -3,6 +3,7 @@ package form
 import "time"
 
 type Supplier struct {
+	ID   int    `json:"id"`
 	Code string `json:"code"`
 	Name string `json:"name"`
 }
@@ -18,24 +19,50 @@ type SupplierUpdateForm struct {
 	Name   string `json:"name" binding:"required"`
 }
 
-type SupplierProductReq struct {
-	Page       int  `form:"page"`
-	Size       int  `form:"size"`
-	SupplierID int  `form:"supplierID"`
-	SpecID     int  `form:"specID"`
-	SKUID      int  `form:"skuID"`
-	BrandID    int  `form:"brandID"`
-	Status     *int `form:"status"`
+type SupplierProductListReq struct {
+	BrandSpecSKUID int `form:"id"`
+	BrandID        int `form:"brandID"`
+	SpecID         int `form:"specID"`
+	SKUID          int `form:"skuID"`
+	Page           int `form:"page"`
+	PageSize       int `form:"pageSize"`
+}
+
+type CreateSupplierProductReq struct {
+	Code       string `json:"code" binding:"required"`
+	SupplierID int    `json:"supplierID" binding:"required"`
+	FacePrice  int    `json:"facePrice" binding:"required"`
+	SpecID     int    `json:"specID" binding:"required"`
+	SKUID      int    `json:"skuID" binding:"required"`
+	BrandID    int    `json:"brandID" binding:"required"`
+	Price      int    `json:"price" binding:"required"`
 }
 
 type SupplierProduct struct {
-	SupplierID int     `json:"supplierID" binding:"required"`
-	Code       string  `json:"code" binding:"required"`
-	FacePrice  float64 `json:"facePrice" binding:"required"`
-	Price      float64 `json:"price" binding:"required"`
-	SpecID     int     `json:"specID" binding:"required"`
-	SKUID      int     `json:"skuID" binding:"required"`
-	BrandID    int     `json:"brandID" binding:"required"`
+	ID           int       `json:"id"`
+	Name         string    `json:"name"`
+	Code         string    `json:"code"`
+	SupplierID   int       `json:"supplierID"`
+	SupplierName string    `json:"supplierName"`
+	SupplierCode string    `json:"supplierCode"`
+	FacePrice    int       `json:"facePrice"`
+	SpecID       int       `json:"specID"`
+	SKUID        int       `json:"skuID"`
+	BrandID      int       `json:"brandID"`
+	Price        int       `json:"price"`
+	Status       int       `json:"status"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+type SupplierProductResp struct {
+	Supplier Supplier          `json:"supplier"`
+	Total    int64             `json:"total"`
+	Items    []SupplierProduct `json:"items"`
+}
+
+type SupplierProductListResp struct {
+	Total int64             `json:"total"`
+	Items []SupplierProduct `json:"items"`
 }
 
 type UpdateSupplierProductForm struct {
@@ -44,6 +71,20 @@ type UpdateSupplierProductForm struct {
 	Status    *int    `json:"status" binding:"required"`
 	Price     float64 `json:"price" binding:"required"`
 	FacePrice float64 `json:"facePrice" binding:"required"`
+}
+
+type UpdateProductRelationForm struct {
+	ID     int  `json:"id" binding:"required"`
+	Status *int `json:"status" binding:"required"`
+}
+
+type UpdateProductForm struct {
+	ID                int     `json:"productID" binding:"required"`
+	FacePrice         float64 `json:"facePrice" binding:"required"`
+	SupplierProductID int     `json:"supplierProductID"`
+	Status            *int    `json:"status" binding:"required"`
+	Model             *int    `json:"model" binding:"required"`
+	Price             float64 `json:"price" binding:"required"`
 }
 
 type RechargeSupplierForm struct {

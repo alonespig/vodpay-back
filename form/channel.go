@@ -1,5 +1,20 @@
 package form
 
+import "time"
+
+type Channel struct {
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	AppID         string    `json:"appID"`
+	SecretKey     string    `json:"secretKey"`
+	WhiteList     string    `json:"whiteList"`
+	Status        int       `json:"status"`
+	Balance       int       `json:"balance"`
+	CreditLimit   int       `json:"creditLimit"`
+	CreditBalance int       `json:"creditBalance"`
+	CreatedAt     time.Time `json:"createdAt"`
+}
+
 type CreateChannelForm struct {
 	Name        string `json:"name" binding:"required"`
 	WhiteList   string `json:"whiteList" binding:"required"`

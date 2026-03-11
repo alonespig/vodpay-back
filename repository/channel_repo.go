@@ -2,6 +2,8 @@ package repository
 
 import (
 	"errors"
+	"log"
+	"vodpay/common"
 	"vodpay/database"
 
 	"gorm.io/gorm"
@@ -10,7 +12,8 @@ import (
 func CreateChannel(channel *Channel) error {
 	err := database.DB.Create(channel).Error
 	if err != nil {
-		return err
+		log.Printf("[CreateChannel]: %v", err)
+		return common.ErrDBQuery
 	}
 	return nil
 }
@@ -19,9 +22,6 @@ func GetChannelByID(id int) (*Channel, error) {
 	var channel Channel
 	err := database.DB.Where("id = ?", id).First(&channel).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrChannelNotFound
-		}
 		return nil, err
 	}
 	return &channel, nil
@@ -31,9 +31,6 @@ func GetChannelByAppID(appID string) (*Channel, error) {
 	var channel Channel
 	err := database.DB.Where("app_id = ?", appID).First(&channel).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrChannelNotFound
-		}
 		return nil, err
 	}
 	return &channel, nil
@@ -43,6 +40,7 @@ func GetChannelList() ([]Channel, error) {
 	var channels []Channel
 	err := database.DB.Order("created_at DESC").Find(&channels).Error
 	if err != nil {
+		log.Printf("[GetChannelList]: %v", err)
 		return nil, err
 	}
 	return channels, nil
@@ -55,7 +53,8 @@ func UpdateChannel(channel *Channel) error {
 func CreateProject(project *Project) error {
 	err := database.DB.Create(project).Error
 	if err != nil {
-		return err
+		log.Printf("[CreateProject]: %v", err)
+		return common.ErrDBInsert
 	}
 	return nil
 }
@@ -88,9 +87,10 @@ func GetProjectByID(id int) (*Project, error) {
 	err := database.DB.Where("id = ?", id).First(&project).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProjectNotFound
+			return nil, common.ErrProjectNotFound
 		}
-		return nil, err
+		log.Printf("[GetProjectByID] id = %d: %v", id, err)
+		return nil, common.ErrDBQuery
 	}
 	return &project, nil
 }
@@ -103,35 +103,75 @@ func UpdateProject(project *Project) error {
 		}).Error
 }
 
-func CreateProjectProduct(product *ProjectProduct) (int, error) {
+func CreateProduct(product *Product) (int, error) {
 	err := database.DB.Create(product).Error
 	if err != nil {
-		return 0, err
+		log.Printf("[CreateProduct]: %v", err)
+		return 0, common.ErrDBInsert
 	}
 	return product.ID, nil
+}
+
+func GetProductCount(projectID, brandSpecSKUID int) (int, error) {
+	var count int64
+	err := database.DB.Model(&Product{}).
+		Where("project_id = ? AND brand_spec_sku_id = ?", projectID, brandSpecSKUID).
+		Count(&count).Error
+	if err != nil {
+		log.Printf("[GetProductCount]: %v", err)
+		return 0, err
+	}
+	return int(count), nil
 }
 
 func CreateProductRelation(relations []ProductRelation) error {
 	return database.DB.Create(&relations).Error
 }
 
+func ChangeProductSupplier(id int, supplier *Supplier, product *SupplierProduct) error {
+	log.Printf("[ChangeProductSupplier] id = %d supplier = %v product = %v", id, supplier, product)
+	return database.DB.Model(&Product{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"supplier_id":           supplier.ID,
+			"supplier_name":         supplier.Name,
+			"supplier_product_code": product.Code,
+		}).Error
+}
+
 func CreateProductRelationList(relations []ProductRelation) error {
 	return database.DB.Create(&relations).Error
 }
 
-func GetProjectProductByID(id int) (*ProjectProduct, error) {
-	var product ProjectProduct
+func GetProductByID(id int) (*Product, error) {
+	var product Product
 	err := database.DB.Where("id = ?", id).First(&product).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProjectProductNotFound
-		}
+		log.Printf("[GetProductByID] id = %d: %v", id, err)
 		return nil, err
 	}
 	return &product, nil
 }
 
-func UpdateProjectProduct(product *ProjectProduct) error {
+func GetChannelNameByID(id int) (string, error) {
+	var channel Channel
+	err := database.DB.Where("id = ?", id).First(&channel).Error
+	if err != nil {
+		return "", err
+	}
+	return channel.Name, nil
+}
+
+func GetProjectNameByID(id int) (string, error) {
+	var project Project
+	err := database.DB.Where("id = ?", id).First(&project).Error
+	if err != nil {
+		return "", err
+	}
+	return project.Name, nil
+}
+
+func UpdateProduct(product *Product) error {
 	return database.DB.Updates(map[string]interface{}{
 		"status":     product.Status,
 		"face_price": product.FacePrice,
@@ -139,21 +179,40 @@ func UpdateProjectProduct(product *ProjectProduct) error {
 	}).Error
 }
 
+func UpdateProduct2(product *Product) error {
+	return database.DB.Model(&Product{}).
+		Where("id = ?", product.ID).
+		Updates(map[string]interface{}{
+			"status":                product.Status,
+			"face_price":            product.FacePrice,
+			"price":                 product.Price,
+			"model":                 product.Model,
+			"supplier_id":           product.SupplierID,
+			"supplier_name":         product.SupplierName,
+			"supplier_product_code": product.SupplierProductCode,
+			"supplier_product_id":   product.SupplierProductID,
+		}).Error
+}
+
 type ProjectProductQuery struct {
+	ChannelID *int
 	ProjectID *int
 	SKUID     *int
 	BrandID   *int
 	SpecID    *int
 }
 
-func GetProjectProductList(q *ProjectProductQuery) ([]ProjectProduct, error) {
-	var products []ProjectProduct
+func GetProductList(q *ProjectProductQuery) ([]Product, error) {
+	var products []Product
 	if q == nil {
 		q = &ProjectProductQuery{}
 	}
 
-	query := database.DB.Model(&ProjectProduct{})
+	query := database.DB.Model(&Product{})
 
+	if q.ChannelID != nil {
+		query = query.Where("channel_id = ?", *q.ChannelID)
+	}
 	if q.ProjectID != nil {
 		query = query.Where("project_id = ?", *q.ProjectID)
 	}
@@ -168,7 +227,8 @@ func GetProjectProductList(q *ProjectProductQuery) ([]ProjectProduct, error) {
 	}
 	err := query.Find(&products).Error
 	if err != nil {
-		return nil, err
+		log.Printf("[GetProductList] projectID = %d skuID = %d brandID = %d specID = %d: %v", *q.ProjectID, *q.SKUID, *q.BrandID, *q.SpecID, err)
+		return nil, common.ErrDBQuery
 	}
 	return products, nil
 }
@@ -177,6 +237,17 @@ func GetProductRelationList(productID int) ([]ProductRelation, error) {
 	var relations []ProductRelation
 	err := database.DB.Where("channel_product_id = ?", productID).Find(&relations).Error
 	if err != nil {
+		log.Printf("[GetProductRelationList] productID = %d: %v", productID, err)
+		return nil, common.ErrDBQuery
+	}
+	return relations, nil
+}
+
+func GetProductSupplierList(productID int) ([]ProductRelation, error) {
+	var relations []ProductRelation
+	err := database.DB.Where("channel_product_id = ?", productID).Find(&relations).Error
+	if err != nil {
+		log.Printf("[GetProductSupplierList] productID = %d: %v", productID, err)
 		return nil, err
 	}
 	return relations, nil

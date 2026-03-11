@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"vodpay/form"
 	"vodpay/service"
 
@@ -49,29 +48,6 @@ func (*ChannelController) UpdateChannel(c *gin.Context) {
 	Success(c, nil)
 }
 
-// CreateChannelSupplierProduct 创建渠道供应商产品
-// func (*ChannelController) CreateChannelSupplierProduct(c *gin.Context) {
-// 	var req form.CreateChannelSupplierProductForm
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		BadRequest(c, err.Error())
-// 		return
-// 	}
-// 	if err := service.CreateChannelProjectProduct(req.ProjectProductID, req.SupplierProductID); err != nil {
-// 		Fail(c, 500, err.Error())
-// 		return
-// 	}
-// 	Success(c, nil)
-// }
-
-// func (*ChannelController) GetChannelSupplierProductList(c *gin.Context) {
-// 	list, err := service.GetChannelSupplierProductList()
-// 	if err != nil {
-// 		Fail(c, 500, err.Error())
-// 		return
-// 	}
-// 	Success(c, list)
-// }
-
 func (*ChannelController) GetProjectList(c *gin.Context) {
 	var req form.ProjectQueryForm
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -112,56 +88,57 @@ func (*ChannelController) UpdateProject(c *gin.Context) {
 	Success(c, nil)
 }
 
-func (*ChannelController) GetProjectProductList(c *gin.Context) {
-	var req form.ProjectProductQueryForm
-	if err := c.ShouldBindQuery(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	list, err := service.GetProjectProductList(&req)
-	if err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, list)
-}
+// func (*ChannelController) ProjectList(c *gin.Context) {
+// 	channelID, err := strconv.Atoi(c.Param("channelID"))
+// 	if err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
 
-func (*ChannelController) UpdateProjectProduct(c *gin.Context) {
-	var req form.UpdateProjectProductForm
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	if err := service.UpdateProjectProduct(&req); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
+// 	list, err := service.GetProjectList(&form.ProjectQueryForm{ChannelID: &channelID})
+// 	if err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, list)
+// }
 
-func (*ChannelController) AddSupplierProduct(c *gin.Context) {
-	var req form.AddSupplierProductForm
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	if err := service.AddSupplierProduct(&req); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
+// func (*ChannelController) UpdateProjectProduct(c *gin.Context) {
+// 	var req form.UpdateProjectProductForm
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	if err := service.UpdateProjectProduct(&req); err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, nil)
+// }
 
-func (*ChannelController) CreateProjectProduct(c *gin.Context) {
-	var req form.CreateProjectProductForm
-	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, err.Error())
-		return
-	}
-	log.Println(req)
-	if err := service.CreateProjectProduct(&req); err != nil {
-		Fail(c, 500, err.Error())
-		return
-	}
-	Success(c, nil)
-}
+// func (*ChannelController) AddSupplierProduct(c *gin.Context) {
+// 	var req form.AddSupplierProductForm
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	if err := service.AddSupplierProduct(&req); err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, nil)
+// }
+
+// func (*ChannelController) CreateProjectProduct(c *gin.Context) {
+// 	var req form.CreateProductForm
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		BadRequest(c, err.Error())
+// 		return
+// 	}
+// 	log.Println(req)
+// 	if err := service.CreateProjectProduct(&req); err != nil {
+// 		Fail(c, 500, err.Error())
+// 		return
+// 	}
+// 	Success(c, nil)
+// }
