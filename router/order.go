@@ -13,7 +13,10 @@ func InitOrderRouter(r *gin.Engine) {
 		order.POST("", orderController.CreateOrder)
 		order.GET("", orderController.GetOrderList)
 		order.POST("/query", orderController.QueryOrder)
-		// order.GET("", orderController.GetOrderList)
-		// order.PUT("", orderController.UpdateOrder)
+
+		// 渠道折线图
+		order.GET("/channel-line-chart", orderController.GetChannelLineChart)
+
+		order.GET("/supplier-order-list", orderController.GetSupplierOrderList)
 	}
 }

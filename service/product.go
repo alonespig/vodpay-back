@@ -8,11 +8,11 @@ import (
 )
 
 func UpdateProductRelation(form *form.UpdateProductRelationForm) error {
-	relation, err := repository.GetProductRelationByID(form.ID)
+	relation, err := repository.GetProductSupplierByID(form.ID)
 	if err != nil {
 		return err
 	}
-	product, err := repository.GetProductByID(relation.ChannelProductID)
+	product, err := repository.GetProductByID(relation.ProductID)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func UpdateProductRelation(form *form.UpdateProductRelationForm) error {
 	if *form.Status == 0 && product.SupplierProductID == relation.SupplierProductID {
 		return ErrSupplierProductUsing
 	}
-	return repository.UpdateProductRelationStatus(form.ID, *form.Status)
+	return repository.UpdateProductSupplierStatus(form.ID, *form.Status)
 }
 
 func UpdateProduct(form *form.UpdateProductForm) error {
@@ -35,7 +35,7 @@ func UpdateProduct(form *form.UpdateProductForm) error {
 		if err != nil {
 			return err
 		}
-		relation, err := repository.GetProductRelationByProductID(product.ID, form.SupplierProductID)
+		relation, err := repository.GetProductSupplierByProductID(product.ID, form.SupplierProductID)
 		if err != nil {
 			return ErrProductNotFoundSupplierProduct
 		}
@@ -46,9 +46,9 @@ func UpdateProduct(form *form.UpdateProductForm) error {
 		if err != nil {
 			return err
 		}
-		product.SupplierID = supplier.ID
+		product.SupplierID = int64(supplier.ID)
 		product.SupplierName = supplier.Name
-		product.SupplierProductID = form.SupplierProductID
+		product.SupplierProductID = int64(form.SupplierProductID)
 		product.SupplierProductCode = supplierProduct.Code
 	}
 	product.FacePrice = int(form.FacePrice * 100)
@@ -102,7 +102,7 @@ func CreateProduct(form *form.CreateProductForm) error {
 		return err
 	}
 
-	project, err := repository.GetProjectByID(form.ProjectID)
+	project, err := repository.GetProjectByID(int64(form.ProjectID))
 	if err != nil {
 		return err
 	}
@@ -124,10 +124,10 @@ func CreateProduct(form *form.CreateProductForm) error {
 
 	product := &repository.Product{
 		Name:           productName,
-		ChannelID:      channel.ID,
-		ProjectID:      form.ProjectID,
+		ChannelID:      int64(channel.ID),
+		ProjectID:      int64(form.ProjectID),
 		LimitCount:     form.LimitNum,
-		BrandSpecSKUID: brandSpecSKU.ID,
+		BrandSpecSKUID: int64(brandSpecSKU.ID),
 		FacePrice:      int(form.FacePrice * 100),
 		Price:          int(form.Price * 100),
 		Model:          *form.Model,
@@ -139,15 +139,15 @@ func CreateProduct(form *form.CreateProductForm) error {
 		return err
 	}
 
-	relations := make([]repository.ProductRelation, 0, len(form.SupplierProductIDList))
+	relations := make([]repository.ProductSupplier, 0, len(form.SupplierProductIDList))
 	for index, supplierProductID := range form.SupplierProductIDList {
-		supplierProduct, err := repository.GetSupplierProductByID(supplierProductID)
+		supplierProduct, err := repository.GetSupplierProductByID(int64(supplierProductID))
 		if err != nil {
 			return err
 		}
-		relations = append(relations, repository.ProductRelation{
-			ChannelProductID:  product.ID,
-			SupplierProductID: supplierProduct.ID,
+		relations = append(relations, repository.ProductSupplier{
+			ProductID:         int64(product.ID),
+			SupplierProductID: int64(supplierProduct.ID),
 			Status:            1,
 		})
 		if index == 0 {
@@ -159,7 +159,7 @@ func CreateProduct(form *form.CreateProductForm) error {
 	}
 
 	// 创建数据库
-	if err = repository.CreateProductRelation(relations); err != nil {
+	if err = repository.CreateProductSupplier(relations); err != nil {
 		return err
 	}
 

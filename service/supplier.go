@@ -17,7 +17,7 @@ func SupplierList() ([]form.SupplierResp, error) {
 	resp := make([]form.SupplierResp, 0, len(suppliers))
 	for _, supplier := range suppliers {
 		resp = append(resp, form.SupplierResp{
-			ID:        supplier.ID,
+			ID:        int64(supplier.ID),
 			Name:      supplier.Name,
 			Code:      supplier.Code,
 			Balance:   supplier.Balance,
@@ -32,30 +32,30 @@ func CreateSupplier(supplier *repository.Supplier) error {
 	return repository.CreateSupplier(supplier)
 }
 
-func RechargeSupplier(req *form.RechargeSupplierForm) error {
-	supplier, err := repository.GetSupplierByID(req.ID)
-	if err != nil {
-		log.Printf("get supplier by id failed, err: %v", err)
-		return err
-	}
-	if supplier.Name != req.Name {
-		return fmt.Errorf("supplier name not match")
-	}
-	recharge := &repository.SupplierRecharge{
-		SupplierID:    supplier.ID,
-		SupplierName:  supplier.Name,
-		SupplierCode:  supplier.Code,
-		Amount:        req.Amount,
-		ImageURL:      req.ImageURL,
-		Status:        0, // 0 是审核中
-		ApplyUserID:   1, // 1 是管理员
-		ApplyUserName: "admin",
-		AuditUserID:   0,
-		AuditUserName: "",
-		Remark:        nil,
-	}
-	return repository.CreateSupplierRecharge(recharge)
-}
+// func RechargeSupplier(req *form.RechargeSupplierForm) error {
+// 	supplier, err := repository.GetSupplierByID(int64(req.ID))
+// 	if err != nil {
+// 		log.Printf("get supplier by id failed, err: %v", err)
+// 		return err
+// 	}
+// 	if supplier.Name != req.Name {
+// 		return fmt.Errorf("supplier name not match")
+// 	}
+// 	recharge := &repository.SupplierRecharge{
+// 		SupplierID:    supplier.ID,
+// 		SupplierName:  supplier.Name,
+// 		SupplierCode:  supplier.Code,
+// 		Amount:        req.Amount,
+// 		ImageURL:      req.ImageURL,
+// 		Status:        0, // 0 是审核中
+// 		ApplyUserID:   1, // 1 是管理员
+// 		ApplyUserName: "admin",
+// 		AuditUserID:   0,
+// 		AuditUserName: "",
+// 		Remark:        nil,
+// 	}
+// 	return repository.CreateSupplierRecharge(recharge)
+// }
 
 func UpdateSupplier(supplier *repository.Supplier) error {
 	_, err := repository.GetSupplierByID(supplier.ID)
@@ -78,31 +78,8 @@ func UpdateSupplierProduct(supplierProduct *repository.SupplierProduct) error {
 	return repository.UpdateSupplierProduct(supplierProduct)
 }
 
-func matchSupProductName(spupplierID, skuID, brandID, specID int) (string, error) {
-	brandSpecSKU, err := GetOrCreateBrandSpecSKU(brandID, specID, skuID)
-	if err != nil {
-		log.Printf("get or create brand spec sku failed, err: %v", err)
-		return "", err
-	}
-	name := brandSpecSKU.Name
-
-	count, err := repository.GetSupplierProductCount(&repository.SupplierProductQuery{
-		SupplierID:     spupplierID,
-		BrandSpecSKUID: brandSpecSKU.ID,
-	})
-	if err != nil {
-		log.Printf("get supplier product count failed, err: %v", err)
-		return "", err
-	}
-
-	if count != 0 {
-		name += fmt.Sprintf("%d", count+1)
-	}
-	return name, nil
-}
-
 func CreateSupplierProduct(form *form.CreateSupplierProductReq) error {
-	supplier, err := repository.GetSupplierByID(form.SupplierID)
+	supplier, err := repository.GetSupplierByID(int64(form.SupplierID))
 	if err != nil {
 		log.Printf("get supplier by id failed, err: %v", err)
 		return err
@@ -128,17 +105,14 @@ func CreateSupplierProduct(form *form.CreateSupplierProductReq) error {
 	}
 	product := &repository.SupplierProduct{
 		Name:           name,
-		SupplierID:     form.SupplierID,
+		SupplierID:     int64(form.SupplierID),
 		Code:           form.Code,
 		SupplierName:   supplier.Name,
 		SupplierCode:   supplier.Code,
-		BrandSpecSKUID: brandSpecSKU.ID,
+		BrandSpecSKUID: int64(brandSpecSKU.ID),
 		Status:         1,
 		FacePrice:      int(form.FacePrice * 100),
 		Price:          int(form.Price * 100),
-		SpecID:         form.SpecID,
-		SKUID:          form.SKUID,
-		BrandID:        form.BrandID,
 	}
 	err = repository.CreateSupplierProduct(product)
 	if err != nil {
@@ -191,23 +165,20 @@ func SupplierProduct(supplierID int) (*form.SupplierProductResp, error) {
 	}
 	if len(products) > 0 {
 		resp.Supplier = form.Supplier{
-			ID:   products[0].SupplierID,
+			ID:   int64(products[0].SupplierID),
 			Code: products[0].SupplierCode,
 			Name: products[0].SupplierName,
 		}
 	}
 	for _, product := range products {
 		resp.Items = append(resp.Items, form.SupplierProduct{
-			ID:           product.ID,
+			ID:           int64(product.ID),
 			Name:         product.Name,
 			Code:         product.Code,
-			SupplierID:   product.SupplierID,
+			SupplierID:   int64(product.SupplierID),
 			SupplierName: product.SupplierName,
 			SupplierCode: product.SupplierCode,
 			FacePrice:    product.FacePrice,
-			SpecID:       product.SpecID,
-			SKUID:        product.SKUID,
-			BrandID:      product.BrandID,
 			Price:        product.Price,
 			Status:       product.Status,
 			CreatedAt:    product.CreatedAt,
@@ -255,9 +226,6 @@ func SupplierProductList(req *form.SupplierProductListReq) (*form.SupplierProduc
 			SupplierName: product.SupplierName,
 			SupplierCode: product.SupplierCode,
 			FacePrice:    product.FacePrice,
-			SpecID:       product.SpecID,
-			SKUID:        product.SKUID,
-			BrandID:      product.BrandID,
 			Price:        product.Price,
 			Status:       product.Status,
 			CreatedAt:    product.CreatedAt,

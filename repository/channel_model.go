@@ -31,17 +31,17 @@ func (p *Project) TableName() string {
 }
 
 type Product struct {
-	ID                  int       `gorm:"primaryKey;AutoIncrement"`
+	ID                  int64     `gorm:"primaryKey;AutoIncrement"`
 	Name                string    `gorm:"column:name"`
 	Status              int       `gorm:"column:status"`
-	ChannelID           int       `gorm:"column:channel_id"`
-	ProjectID           int       `gorm:"column:project_id"`
+	ChannelID           int64     `gorm:"column:channel_id"`
+	ProjectID           int64     `gorm:"column:project_id"`
 	LimitCount          int       `gorm:"column:limit_count"`
-	SupplierID          int       `gorm:"column:supplier_id"`
+	SupplierID          int64     `gorm:"column:supplier_id"`
 	SupplierName        string    `gorm:"column:supplier_name"`
 	SupplierProductCode string    `gorm:"column:supplier_product_code"`
-	SupplierProductID   int       `gorm:"column:supplier_product_id"`
-	BrandSpecSKUID      int       `gorm:"column:brand_spec_sku_id"`
+	SupplierProductID   int64     `gorm:"column:supplier_product_id"`
+	BrandSpecSKUID      int64     `gorm:"column:brand_spec_sku_id"`
 	FacePrice           int       `gorm:"column:face_price"`
 	Price               int       `gorm:"column:price"`
 	Model               int       `gorm:"column:model"`

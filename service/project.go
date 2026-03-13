@@ -79,7 +79,7 @@ func GetProjectListByChannelID(id int) ([]dto.Project, *dto.Channel, error) {
 }
 
 func UpdateProjectStatus(projectID, status int) error {
-	project, err := repository.GetProjectByID(projectID)
+	project, err := repository.GetProjectByID(int64(projectID))
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func UpdateProjectStatus(projectID, status int) error {
 // }
 
 func UpdateProjectProduct(form *form.UpdateProjectProductForm) error {
-	product, err := repository.GetProductByID(form.ID)
+	product, err := repository.GetProductByID(int64(form.ID))
 	if err != nil {
 		log.Printf("get project product by id failed, err: %v", err)
 		return err
@@ -298,36 +298,36 @@ func UpdateSupplierRecharge(form *form.SupplierRecharge) error {
 
 func AddSupplierProduct(form *form.AddSupplierProductForm) error {
 	// 检查项目产品是否存在
-	_, err := repository.GetProductByID(form.ProjectProductID)
+	_, err := repository.GetProductByID(int64(form.ProjectProductID))
 	if err != nil {
 		log.Printf("get project product by id failed, err: %v", err)
 		return err
 	}
 	// 检查供应商产品是否存在
 	for _, supplierProductID := range form.SupplierProductIDList {
-		_, err := repository.GetSupplierProductByID(supplierProductID)
+		_, err := repository.GetSupplierProductByID(int64(supplierProductID))
 		if err != nil {
 			log.Printf("get supplier product by id failed, err: %v", err)
 			return err
 		}
 	}
-	addList := make([]repository.ProductRelation, 0, len(form.SupplierProductIDList))
+	addList := make([]repository.ProductSupplier, 0, len(form.SupplierProductIDList))
 	for _, supplierProductID := range form.SupplierProductIDList {
-		addList = append(addList, repository.ProductRelation{
-			ChannelProductID:  form.ProjectProductID,
-			SupplierProductID: supplierProductID,
+		addList = append(addList, repository.ProductSupplier{
+			ProductID:         int64(form.ProjectProductID),
+			SupplierProductID: int64(supplierProductID),
 		})
 	}
-	if err := repository.CreateProductRelationList(addList); err != nil {
-		log.Printf("create product relation list failed, err: %v", err)
+	if err := repository.CreateProductSupplierList(addList); err != nil {
+		log.Printf("create product supplier list failed, err: %v", err)
 		return err
 	}
 	return nil
 }
 
 // GetProductSupplierList 获取产品的供应商产品列表
-func GetProductSupplierList(productID int) (*form.ProductSupplierResp, error) {
-	product, err := repository.GetProductByID(productID)
+func GetProductSupplierList(productID int64) (*form.ProductSupplierResp, error) {
+	product, err := repository.GetProductByID(int64(productID))
 	if err != nil {
 		return nil, err
 	}
@@ -361,11 +361,11 @@ func GetProductSupplierList(productID int) (*form.ProductSupplierResp, error) {
 			return nil, err
 		}
 		resp.SupplierList = append(resp.SupplierList, form.ProductSupplier{
-			ID:                  relation.ID,
-			SupplierID:          supplierProduct.SupplierID,
+			ID:                  int64(relation.ID),
+			SupplierID:          int64(supplierProduct.SupplierID),
 			SupplierName:        supplierProduct.SupplierName,
 			SupplierCode:        supplierProduct.SupplierCode,
-			SupplierProductID:   supplierProduct.ID,
+			SupplierProductID:   int64(supplierProduct.ID),
 			SupplierProductCode: supplierProduct.Code,
 			SupplierProductName: supplierProduct.Name,
 			FacePrice:           supplierProduct.FacePrice,

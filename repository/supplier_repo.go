@@ -13,7 +13,7 @@ func CreateSupplier(supplier *Supplier) error {
 	return database.DB.Create(supplier).Error
 }
 
-func GetSupplierByID(id int) (*Supplier, error) {
+func GetSupplierByID(id int64) (*Supplier, error) {
 	var supplier Supplier
 	if err := database.DB.Where("id = ?", id).First(&supplier).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -249,6 +249,21 @@ func CreateSupplierProduct(product *SupplierProduct) error {
 	return database.DB.Create(product).Error
 }
 
+func GetSupplierProductCode(code string) (SupplierProduct, error) {
+	supplierProduct := SupplierProduct{}
+	err := database.DB.Model(&supplierProduct).
+		Where("code = ?", code).
+		First(&supplierProduct).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return SupplierProduct{}, common.ErrSupplierProductNotFound
+		}
+		log.Printf("[GetSupplierProductByCode] code = %s: %v", code, err)
+		return SupplierProduct{}, common.ErrDBQuery
+	}
+	return supplierProduct, nil
+}
+
 func GetSupplierProductByCode(supplierID int, code string) (SupplierProduct, error) {
 	supplierProduct := SupplierProduct{}
 	err := database.DB.Model(&supplierProduct).
@@ -264,7 +279,7 @@ func GetSupplierProductByCode(supplierID int, code string) (SupplierProduct, err
 	return supplierProduct, nil
 }
 
-func GetSupplierProductByID(productID int) (*SupplierProduct, error) {
+func GetSupplierProductByID(productID int64) (*SupplierProduct, error) {
 	var supplierProduct SupplierProduct
 	err := database.DB.First(&supplierProduct, "id = ?", productID).Error
 	if err != nil {

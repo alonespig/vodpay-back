@@ -104,7 +104,7 @@ func (s *SupplierController) UpdateSupplierProduct(c *gin.Context) {
 		return
 	}
 	if err := service.UpdateSupplierProduct(&repository.SupplierProduct{
-		ID:        form.ID,
+		ID:        int64(form.ID),
 		Code:      form.Code,
 		Status:    *form.Status,
 		Price:     int(form.Price * 100),

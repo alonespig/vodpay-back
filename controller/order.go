@@ -75,3 +75,35 @@ func (c *OrderController) GetOrderList(ctx *gin.Context) {
 	}
 	Success(ctx, resp)
 }
+
+func (c *OrderController) GetChannelLineChart(ctx *gin.Context) {
+	queryForm := &form.ChannelLineChartQueryForm{}
+	if err := ctx.ShouldBind(queryForm); err != nil {
+		log.Printf("[GetChannelLineChart] ShouldBind: %v", err)
+		Fail(ctx, CodeParamError, err.Error())
+		return
+	}
+	resp, err := service.GetChannelLineChart(queryForm)
+	if err != nil {
+		log.Printf("[GetChannelLineChart] GetChannelLineChart: %v", err)
+		Fail(ctx, CodeServerError, err.Error())
+		return
+	}
+	Success(ctx, resp)
+}
+
+func (c *OrderController) GetSupplierOrderList(ctx *gin.Context) {
+	queryForm := &form.SupplierOrderListQueryForm{}
+	if err := ctx.ShouldBind(queryForm); err != nil {
+		log.Printf("[GetSupplierOrderList] ShouldBind: %v", err)
+		Fail(ctx, CodeParamError, err.Error())
+		return
+	}
+	resp, err := service.GetSupplierOrderList(queryForm)
+	if err != nil {
+		log.Printf("[GetSupplierOrderList] GetSupplierOrderList: %v", err)
+		Fail(ctx, CodeServerError, err.Error())
+		return
+	}
+	Success(ctx, resp)
+}

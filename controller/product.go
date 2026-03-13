@@ -73,7 +73,7 @@ func (*ProductController) GetProductSupplierList(ctx *gin.Context) {
 		return
 	}
 
-	list, err := service.GetProductSupplierList(productID)
+	list, err := service.GetProductSupplierList(int64(productID))
 	if err != nil {
 		Fail(ctx, 500, err.Error())
 		return

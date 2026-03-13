@@ -82,7 +82,7 @@ func GetProjectList(q *ProjectQuery) ([]Project, error) {
 	return projects, nil
 }
 
-func GetProjectByID(id int) (*Project, error) {
+func GetProjectByID(id int64) (*Project, error) {
 	var project Project
 	err := database.DB.Where("id = ?", id).First(&project).Error
 	if err != nil {
@@ -103,7 +103,7 @@ func UpdateProject(project *Project) error {
 		}).Error
 }
 
-func CreateProduct(product *Product) (int, error) {
+func CreateProduct(product *Product) (int64, error) {
 	err := database.DB.Create(product).Error
 	if err != nil {
 		log.Printf("[CreateProduct]: %v", err)
@@ -124,7 +124,7 @@ func GetProductCount(projectID, brandSpecSKUID int) (int, error) {
 	return int(count), nil
 }
 
-func CreateProductRelation(relations []ProductRelation) error {
+func CreateProductSupplier(relations []ProductSupplier) error {
 	return database.DB.Create(&relations).Error
 }
 
@@ -139,11 +139,11 @@ func ChangeProductSupplier(id int, supplier *Supplier, product *SupplierProduct)
 		}).Error
 }
 
-func CreateProductRelationList(relations []ProductRelation) error {
+func CreateProductSupplierList(relations []ProductSupplier) error {
 	return database.DB.Create(&relations).Error
 }
 
-func GetProductByID(id int) (*Product, error) {
+func GetProductByID(id int64) (*Product, error) {
 	var product Product
 	err := database.DB.Where("id = ?", id).First(&product).Error
 	if err != nil {
@@ -153,7 +153,7 @@ func GetProductByID(id int) (*Product, error) {
 	return &product, nil
 }
 
-func GetChannelNameByID(id int) (string, error) {
+func GetChannelNameByID(id int64) (string, error) {
 	var channel Channel
 	err := database.DB.Where("id = ?", id).First(&channel).Error
 	if err != nil {
@@ -162,7 +162,7 @@ func GetChannelNameByID(id int) (string, error) {
 	return channel.Name, nil
 }
 
-func GetProjectNameByID(id int) (string, error) {
+func GetProjectNameByID(id int64) (string, error) {
 	var project Project
 	err := database.DB.Where("id = ?", id).First(&project).Error
 	if err != nil {
@@ -233,22 +233,22 @@ func GetProductList(q *ProjectProductQuery) ([]Product, error) {
 	return products, nil
 }
 
-func GetProductRelationList(productID int) ([]ProductRelation, error) {
-	var relations []ProductRelation
-	err := database.DB.Where("channel_product_id = ?", productID).Find(&relations).Error
+func GetProductSupplierList(productID int64) ([]ProductSupplier, error) {
+	var relations []ProductSupplier
+	err := database.DB.Where("product_id = ?", productID).Find(&relations).Error
 	if err != nil {
-		log.Printf("[GetProductRelationList] productID = %d: %v", productID, err)
+		log.Printf("[GetProductSupplierList] productID = %d: %v", productID, err)
 		return nil, common.ErrDBQuery
 	}
 	return relations, nil
 }
 
-func GetProductSupplierList(productID int) ([]ProductRelation, error) {
-	var relations []ProductRelation
-	err := database.DB.Where("channel_product_id = ?", productID).Find(&relations).Error
-	if err != nil {
-		log.Printf("[GetProductSupplierList] productID = %d: %v", productID, err)
-		return nil, err
-	}
-	return relations, nil
-}
+// func GetProductSupplierList(productID int) ([]ProductRelation, error) {
+// 	var relations []ProductRelation
+// 	err := database.DB.Where("channel_product_id = ?", productID).Find(&relations).Error
+// 	if err != nil {
+// 		log.Printf("[GetProductSupplierList] productID = %d: %v", productID, err)
+// 		return nil, err
+// 	}
+// 	return relations, nil
+// }

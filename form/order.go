@@ -75,3 +75,41 @@ type OrderQueryResponse struct {
 	OrderStatus     int    `json:"order_status"`
 	PlatformOrderNo string `json:"platform_order_no"`
 }
+
+type Point struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
+type ChannelLineChartQueryForm struct {
+	ChannelID int   `form:"channelID"`
+	ProjectID int   `form:"projectID"`
+	ProductID int   `form:"productID"`
+	Timestamp int64 `form:"timestamp" binding:"required"`
+}
+
+type ChannelLineChartResp struct {
+	Points []*Point `json:"points"`
+}
+
+type SupplierOrder struct {
+	Name           string `json:"name"`
+	Price          int    `json:"price"`
+	SupplierName   string `json:"supplierName"`
+	SupProductCode string `json:"supplierProductCode"`
+	Total          int64  `json:"total"`
+	Status         int    `json:"status"`
+}
+
+type SupplierOrderListResp struct {
+	Total  int64           `json:"total"`
+	Orders []SupplierOrder `json:"orders"`
+}
+
+type SupplierOrderListQueryForm struct {
+	SupplierID     int  `form:"supplierID"`
+	BrandSkuSpecID int  `form:"brandSkuSpecID"`
+	StartTime      int  `form:"startTime" binding:"required"`
+	EndTime        int  `form:"endTime" binding:"required"`
+	Status         *int `form:"status"`
+}

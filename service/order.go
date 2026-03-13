@@ -8,6 +8,7 @@ import (
 	"vodpay/client"
 	"vodpay/common"
 	"vodpay/form"
+	"vodpay/mq"
 	"vodpay/repository"
 
 	"github.com/go-sql-driver/mysql"
@@ -39,7 +40,7 @@ func CreateOrder(form *form.OrderForm) (string, error) {
 	// }
 
 	// 检查产品是否存在
-	product, err := repository.GetProductByID(int(form.ProductCode))
+	product, err := repository.GetProductByID(int64(form.ProductCode))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", ErrProductNotFound
@@ -107,6 +108,10 @@ func CreateOrder(form *form.OrderForm) (string, error) {
 			}
 		}
 		return "", ErrSystemError
+	}
+	// 发送订单创建消息
+	if err := mq.SendOrderCreated(order.ID); err != nil {
+		log.Printf("[CreateOrder] SendOrderCreated: %v", err)
 	}
 	return order.SelfOrderNo, nil
 }
@@ -185,11 +190,11 @@ func GetOrderList(queryForm *form.OrderListQueryForm) (*form.OrderListResp, erro
 		Orders: make([]*form.Order, 0, len(orders)),
 	}
 	for _, order := range orders {
-		product, err := repository.GetProductByID(int(order.ProductID))
+		product, err := repository.GetProductByID(order.ProductID)
 		if err != nil {
 			log.Printf("[GetOrderList] productID = %d: %v", order.ProductID, err)
 		}
-		project, err := repository.GetProjectByID(int(product.ProjectID))
+		project, err := repository.GetProjectByID(product.ProjectID)
 		if err != nil {
 			log.Printf("[GetOrderList] projectID = %d: %v", product.ProjectID, err)
 		}
@@ -215,21 +220,93 @@ func GetOrderList(queryForm *form.OrderListQueryForm) (*form.OrderListResp, erro
 	return &resp, nil
 }
 
-func handleOrder(order *repository.Order) error {
-	// 处理订单
-	return nil
+func GetChannelLineChart(queryForm *form.ChannelLineChartQueryForm) (*form.ChannelLineChartResp, error) {
+	// TODO: 实现渠道折线图
+	// status := common.StatusSuccess
+	query := &repository.OrderListQuery{
+		ChannelID: int64(queryForm.ChannelID),
+		ProjectID: int64(queryForm.ProjectID),
+		ProductID: int64(queryForm.ProductID),
+		// Status:    &status,
+	}
+	if queryForm.Timestamp != 0 {
+		startTime := time.UnixMilli(int64(queryForm.Timestamp))
+		endTime := time.UnixMilli(int64(queryForm.Timestamp) + 24*60*60*1000)
+		query.StartTime = &startTime
+		query.EndTime = &endTime
+	}
+
+	_, orders, err := repository.GetOrderList(query)
+	if err != nil {
+		log.Printf("[GetChannelLineChart] channelID = %d, projectID = %d, productID = %d: %v", queryForm.ChannelID, queryForm.ProjectID, queryForm.ProductID, err)
+		return nil, ErrSystemError
+	}
+
+	log.Printf("orders = %v", orders)
+
+	mapStatus := map[int]int64{}
+
+	for _, order := range orders {
+		mapStatus[order.CreatedAt.Hour()]++
+	}
+
+	log.Printf("mapStatus = %v", mapStatus)
+
+	resp := form.ChannelLineChartResp{
+		Points: make([]*form.Point, 0),
+	}
+
+	for hour := 0; hour < 24; hour++ {
+		resp.Points = append(resp.Points, &form.Point{
+			X: hour,
+			Y: int(mapStatus[hour]),
+		})
+	}
+
+	return &resp, nil
 }
 
-func CronSyncOrder() {
-	orders, err := repository.GetOrderByStatus(common.StatusNotOrdered)
+func GetSupplierOrderList(queryForm *form.SupplierOrderListQueryForm) (*form.SupplierOrderListResp, error) {
+	query := &repository.SupplierOrderListQuery{
+		SupplierID:     int64(queryForm.SupplierID),
+		Status:         queryForm.Status,
+		BrandSkuSpecID: int64(queryForm.BrandSkuSpecID),
+	}
+	startTime := time.UnixMilli(int64(queryForm.StartTime))
+	endTime := time.UnixMilli(int64(queryForm.EndTime) + 24*60*60*1000)
+	query.StartTime = &startTime
+	query.EndTime = &endTime
+	orderCount, orders, err := repository.GetSupplierOrderList(query)
 	if err != nil {
-		log.Printf("[CronSyncOrder] status = %d: %v", common.StatusWait, err)
-		return
+		log.Printf("[GetSupplierOrderList] supplierID = %d: %v", queryForm.SupplierID, err)
+		return nil, ErrSystemError
 	}
+
+	resp := form.SupplierOrderListResp{
+		Total:  orderCount,
+		Orders: make([]form.SupplierOrder, 0, len(orders)),
+	}
+
 	for _, order := range orders {
-		// 处理订单
-		if err := handleOrder(order); err != nil {
-			log.Printf("[CronSyncOrder] order = %v: %v", order, err)
+		product, err := repository.GetSupplierProductCode(order.SupProductCode)
+		if err != nil {
+			log.Printf("[GetSupplierOrderList] supProductCode = %s: %v", order.SupProductCode, err)
+			return nil, ErrSystemError
 		}
+		resp.Orders = append(resp.Orders, form.SupplierOrder{
+			SupplierName:   product.SupplierName,
+			Name:           product.Name,
+			Price:          order.Price,
+			SupProductCode: order.SupProductCode,
+			Total:          order.Total,
+			Status:         order.Status,
+		})
 	}
+
+	return &resp, nil
+}
+
+// 将下单中的订单状态改成充值中
+func HandleOrder(orderID int64) error {
+	return nil
 }

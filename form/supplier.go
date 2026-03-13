@@ -3,7 +3,7 @@ package form
 import "time"
 
 type Supplier struct {
-	ID   int    `json:"id"`
+	ID   int64  `json:"id"`
 	Code string `json:"code"`
 	Name string `json:"name"`
 }
@@ -14,7 +14,7 @@ type CreateModelForm struct {
 }
 
 type SupplierUpdateForm struct {
-	ID     int    `json:"id" binding:"required"`
+	ID     int64  `json:"id" binding:"required"`
 	Status *int   `json:"status" binding:"required"`
 	Name   string `json:"name" binding:"required"`
 }
@@ -39,19 +39,17 @@ type CreateSupplierProductReq struct {
 }
 
 type SupplierProduct struct {
-	ID           int       `json:"id"`
-	Name         string    `json:"name"`
-	Code         string    `json:"code"`
-	SupplierID   int       `json:"supplierID"`
-	SupplierName string    `json:"supplierName"`
-	SupplierCode string    `json:"supplierCode"`
-	FacePrice    int       `json:"facePrice"`
-	SpecID       int       `json:"specID"`
-	SKUID        int       `json:"skuID"`
-	BrandID      int       `json:"brandID"`
-	Price        int       `json:"price"`
-	Status       int       `json:"status"`
-	CreatedAt    time.Time `json:"createdAt"`
+	ID             int64     `json:"id"`
+	Name           string    `json:"name"`
+	Code           string    `json:"code"`
+	SupplierID     int64     `json:"supplierID"`
+	SupplierName   string    `json:"supplierName"`
+	SupplierCode   string    `json:"supplierCode"`
+	BrandSkuSpecID int64     `json:"brandSkuSpecID"`
+	FacePrice      int       `json:"facePrice"`
+	Price          int       `json:"price"`
+	Status         int       `json:"status"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 type SupplierProductResp struct {
@@ -79,9 +77,9 @@ type UpdateProductRelationForm struct {
 }
 
 type UpdateProductForm struct {
-	ID                int     `json:"productID" binding:"required"`
+	ID                int64   `json:"productID" binding:"required"`
 	FacePrice         float64 `json:"facePrice" binding:"required"`
-	SupplierProductID int     `json:"supplierProductID"`
+	SupplierProductID int64   `json:"supplierProductID"`
 	Status            *int    `json:"status" binding:"required"`
 	Model             *int    `json:"model" binding:"required"`
 	Price             float64 `json:"price" binding:"required"`
@@ -104,7 +102,7 @@ type SupplierRecharge struct {
 
 // 供应商
 type SupplierResp struct {
-	ID        int       `db:"id" json:"id"`
+	ID        int64     `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
 	Code      string    `db:"code" json:"code"`
 	Balance   int       `db:"balance" json:"balance"`

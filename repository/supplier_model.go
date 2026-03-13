@@ -3,7 +3,7 @@ package repository
 import "time"
 
 type Supplier struct {
-	ID        int       `gorm:"primaryKey;AutoIncrement"`
+	ID        int64     `gorm:"primaryKey;AutoIncrement"`
 	Name      string    `gorm:"column:name"`
 	Code      string    `gorm:"column:code"`
 	Balance   int       `gorm:"column:balance"`
@@ -16,17 +16,17 @@ func (Supplier) TableName() string {
 }
 
 type SupplierProduct struct {
-	ID             int       `gorm:"primaryKey;AutoIncrement"`
+	ID             int64     `gorm:"primaryKey;AutoIncrement"`
 	Name           string    `gorm:"column:name"`
 	Code           string    `gorm:"column:code"`
-	SupplierID     int       `gorm:"column:supplier_id"`
+	SupplierID     int64     `gorm:"column:supplier_id"`
 	SupplierName   string    `gorm:"column:supplier_name"`
 	SupplierCode   string    `gorm:"column:supplier_code"`
 	FacePrice      int       `gorm:"column:face_price"`
-	BrandSpecSKUID int       `gorm:"column:brand_spec_sku_id"`
-	SpecID         int       `gorm:"column:spec_id"`
-	SKUID          int       `gorm:"column:sku_id"`
-	BrandID        int       `gorm:"column:brand_id"`
+	BrandSpecSKUID int64     `gorm:"column:brand_spec_sku_id"`
+	SpecID         int64     `gorm:"column:spec_id"`
+	SKUID          int64     `gorm:"column:sku_id"`
+	BrandID        int64     `gorm:"column:brand_id"`
 	Price          int       `gorm:"column:price"`
 	Status         int       `gorm:"column:status"`
 	CreatedAt      time.Time `gorm:"column:created_at;AutoCreateTime"`

@@ -1,15 +1,11 @@
 package repository
 
 import (
-	"errors"
 	"log"
-	"vodpay/common"
 	"vodpay/database"
-
-	"gorm.io/gorm"
 )
 
-func GetProductListByProjectID(projectID int) ([]Product, error) {
+func GetProductListByProjectID(projectID int64) ([]Product, error) {
 	var products []Product
 	err := database.DB.Where("project_id = ?", projectID).Find(&products).Error
 	if err != nil {
@@ -18,33 +14,31 @@ func GetProductListByProjectID(projectID int) ([]Product, error) {
 	}
 	return products, nil
 }
-func UpdateProductRelationStatus(id, status int) error {
-	return database.DB.Model(&ProductRelation{}).
+
+func UpdateProductSupplierStatus(id, status int) error {
+	return database.DB.Model(&ProductSupplier{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status": status,
 		}).Error
 }
 
-func GetProductRelationByProductID(productID, supplierProductID int) (*ProductRelation, error) {
-	var relation ProductRelation
+func GetProductSupplierByProductID(productID, supplierProductID int64) (*ProductSupplier, error) {
+	var relation ProductSupplier
 	if err := database.DB.
-		Where("channel_product_id = ? AND supplier_product_id = ?", productID, supplierProductID).
+		Where("product_id = ? AND supplier_product_id = ?", productID, supplierProductID).
 		First(&relation).Error; err != nil {
 		return nil, err
 	}
 	return &relation, nil
 }
 
-func GetProductRelationByID(id int) (*ProductRelation, error) {
-	var relation ProductRelation
+func GetProductSupplierByID(id int) (*ProductSupplier, error) {
+	var relation ProductSupplier
 	err := database.DB.Where("id = ?", id).First(&relation).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, common.ErrProductRelationNotFound
-		}
-		log.Printf("[GetProductRelationByID] id = %d: %v", id, err)
-		return nil, common.ErrDBQuery
+		log.Printf("[GetProductSupplierByID] id = %d: %v", id, err)
+		return nil, err
 	}
 	return &relation, nil
 }
